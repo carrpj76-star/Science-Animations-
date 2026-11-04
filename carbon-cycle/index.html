@@ -620,7 +620,7 @@ const CH = [
   say(.3, 'Earth’s outer layer is broken into plates. Here, a dense ocean plate sinks beneath a continent. This is subduction.');
   const move = el('path', {d:'M1170 624H860C822 630 784 652 760 672', stroke:'#C9CED6', 'stroke-width':3, fill:'none', 'stroke-dasharray':'14 10', opacity:0}, FX);
   show(.5, move);
-  loop(.5, 30, c => move.setAttribute('stroke-dashoffset', (c * 18).toFixed(1)));
+  loop(.5, 30, c => move.setAttribute('stroke-dashoffset', (-c * 18).toFixed(1)));
   const a = label(1060, 640, 'Ocean plate', 'inv sm'), b = label(330, 660, 'Continental plate', 'inv sm'), s = label(880, 670, 'Subduction', 'inv sm');
   show(1, a); show(1.5, b); show(2, s);
   say(7, 'The sinking plate carries carbon-rich limestone and sediment deep into Earth.');
