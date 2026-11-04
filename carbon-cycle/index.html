@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_blank">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Carbon Cycle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E4EBEE; --surface:#FFFFFF; --surface-2:#F1F5F6; --ink:#16222A; --muted:#4D5E67; --line:#C8D2D7;
+  --accent:#0F5A73; --accent-ink:#FFFFFF; --hi:#F2B300;
+  --head:'Archivo','Arial Narrow',Arial,sans-serif; --body:'Atkinson Hyperlegible',Verdana,Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#0F171B;--surface:#172229;--surface-2:#1E2B33;--ink:#E3EBEE;--muted:#A0B1BA;--line:#2D3D46;--accent:#62B6D2;--accent-ink:#0B1A20;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0F171B;--surface:#172229;--surface-2:#1E2B33;--ink:#E3EBEE;--muted:#A0B1BA;--line:#2D3D46;--accent:#62B6D2;--accent-ink:#0B1A20;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+main{min-width:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto}
+:root{--side:clamp(250px,25vw,360px)}
+header.wrap{padding-top:20px;padding-bottom:14px;display:flex;flex-wrap:wrap;gap:10px 28px;align-items:end}
+h1{font-family:var(--head);font-stretch:80%;font-weight:800;font-size:clamp(30px,3.6vw,44px);line-height:1;margin:0}
+.target{margin:0;padding:9px 14px;background:var(--surface);border-left:5px solid var(--accent);border-radius:0 8px 8px 0;max-width:70ch;flex:1 1 420px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.chapbar{display:flex;align-items:baseline;gap:14px;padding:12px 18px 10px;border-bottom:1px solid var(--line)}
+.chapno{margin:0;color:var(--muted);font-size:14px;white-space:nowrap}
+.chapbar h2{margin:0;font-family:var(--head);font-stretch:85%;font-weight:800;font-size:24px;line-height:1.1}
+.card{display:flex;flex-direction:column}
+.side{display:contents}
+.stagecol{order:1;min-width:0}
+.chapbar{order:0}
+.caption{order:2}
+.controls{order:3}
+svg#scene{display:block;width:100%;height:auto;background:#B9D5E5}
+.rotate-tip{display:none;margin:0;padding:6px 20px 0;font-size:14px;color:var(--muted)}
+@media (orientation:portrait) and (max-width:599px){.rotate-tip{display:block}}
+.progress{height:5px;background:var(--surface-2)}
+#prog{height:100%;width:0;background:var(--accent)}
+.caption{margin:0;padding:14px 20px 4px;font-size:clamp(17px,1.6vw,21px);line-height:1.45;min-height:3.6em;max-width:78ch}
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 18px 16px}
+.grp.transport{display:grid;grid-template-columns:repeat(4,auto);gap:8px}
+@media (max-width:480px){
+  .chapbar{flex-direction:column;gap:2px;padding:10px 16px 8px}
+  .caption{padding:12px 16px 4px;font-size:17px}
+  .controls{padding:10px 16px 14px;gap:10px 14px}
+  .grp.transport{grid-template-columns:repeat(4,1fr);width:100%}
+  .btn{padding:9px 4px;font-size:14.5px}
+  .btn.primary{min-width:0}
+}
+
+/* Landscape screens (Chromebooks, laptops, projectors, phones held sideways):
+   scene on the left sized to fit the screen height, caption and controls beside it */
+@media (orientation:landscape) and (min-width:600px){
+  :root{--fitW:calc((100vh - 36px) * 16 / 9 + var(--side))}
+  @supports (height:100svh){:root{--fitW:calc((100svh - 36px) * 16 / 9 + var(--side))}}
+  .wrap{max-width:min(1720px,var(--fitW))}
+  .card{display:grid;grid-template-columns:minmax(0,1fr) var(--side);align-items:stretch}
+  .stagecol{grid-column:1;grid-row:1}
+  .side{display:flex;flex-direction:column;grid-column:2;grid-row:1;contain:size;overflow-y:auto;border-left:1px solid var(--line)}
+  .chapbar{flex-direction:column;align-items:flex-start;gap:3px;padding:14px 18px 12px}
+  .chapbar h2{font-size:clamp(20px,1.7vw,26px)}
+  .caption{flex:1 0 auto;padding:16px 18px 8px;font-size:clamp(16px,1.35vw,21px);min-height:0}
+  .controls{flex-direction:column;align-items:stretch;gap:12px;padding:12px 18px 18px;border-top:1px solid var(--line)}
+  .spacer{display:none}
+  .grp.transport{grid-template-columns:repeat(3,1fr)}
+  .grp.transport #play{grid-column:1/-1;order:-1;padding:11px 14px;font-size:17px}
+  .seg{display:flex}
+  .seg button{flex:1}
+  header.wrap{padding-top:14px;padding-bottom:10px}
+}
+/* short landscape screens (phones sideways, small laptops) */
+@media (orientation:landscape) and (min-width:600px) and (max-height:520px){
+  :root{--side:clamp(250px,34vw,300px)}
+  header.wrap{padding-top:8px;padding-bottom:8px;gap:6px 20px}
+  h1{font-size:26px}
+  .target{font-size:14px;padding:6px 10px;line-height:1.35}
+  .chapbar{padding:8px 12px 6px}
+  .chapno{font-size:12.5px}
+  .chapbar h2{font-size:18px}
+  .caption{padding:8px 12px 4px;font-size:15px;line-height:1.4}
+  .controls{padding:8px 12px 10px;gap:8px}
+  .btn{padding:6px 3px;font-size:13.5px}
+  .grp.transport{grid-template-columns:auto minmax(0,1fr) auto;gap:6px}
+  .grp.transport #prev,.grp.transport #next{padding:6px 9px}
+  .grp.transport #prev{order:1}
+  .grp.transport #play{order:2;grid-column:auto;padding:6px 8px;font-size:15px}
+  .grp.transport #next{order:3}
+  .grp.transport #replay{order:4;grid-column:1/-1}
+  .tog{font-size:13.5px}
+  .seg button{padding:5px 6px;font-size:13px}
+}
+.btn{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700;font-size:15px}
+.btn:hover{border-color:var(--muted)}
+.btn{white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);min-width:96px}
+.btn:disabled{opacity:.45;cursor:default}
+.grp{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.spacer{flex:1}
+.tog{display:inline-flex;gap:7px;align-items:center;font-size:15px;cursor:pointer}
+.tog input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface-2);padding:7px 10px;font-size:14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+@keyframes nudge{0%,100%{box-shadow:0 0 0 0 rgba(242,179,0,0)}50%{box-shadow:0 0 0 5px rgba(242,179,0,.55)}}
+@media (prefers-reduced-motion:no-preference){.btn.ready{animation:nudge 1.6s ease-in-out infinite}}
+
+nav.chapters{margin:14px 0 0}
+nav.chapters ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+nav.chapters button{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;cursor:pointer;display:flex;gap:9px;align-items:baseline;font-size:14.5px}
+nav.chapters button .n{font-family:var(--head);font-weight:800;color:var(--muted);min-width:1.4em}
+nav.chapters button[aria-current="step"]{border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent);font-weight:700}
+nav.chapters button.seen .n{color:var(--accent)}
+.key{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted);margin:14px 0 0}
+.key svg{vertical-align:-3px;margin-right:5px}
+.k{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25);vertical-align:-1px;margin-right:5px}
+footer{padding-block:18px 26px;font-size:13.5px;color:var(--muted)}
+
+/* scene text */
+#scene text{font-family:var(--body)}
+.callout{font-weight:700;font-size:calc(16px * var(--ts,1));fill:#16222A;paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:calc(4.5px * var(--ts,1));stroke-linejoin:round;pointer-events:none}
+.callout.inv{fill:#fff;stroke:rgba(10,20,25,.55)}
+.callout.eq{font-size:calc(21px * var(--ts,1))}
+.callout.sm{font-size:calc(13.5px * var(--ts,1));font-weight:400}
+#inset .callout{font-size:calc(16px * var(--tsi,1))}
+#inset .callout.sm{font-size:calc(13.5px * var(--tsi,1))}
+.hud-l{font-size:12.5px;fill:#4D5E67}
+.hud-v{font-family:var(--head) !important;font-weight:800;font-size:20px;fill:#16222A}
+.arrowline{fill:none;stroke-width:3.2;stroke-linecap:round}
+.arrowcase{fill:none;stroke:rgba(255,255,255,.8);stroke-width:7;stroke-linecap:round}
+@media (prefers-reduced-motion:no-preference){#waves{animation:drift 7s linear infinite}}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-60px)}}
+/* full screen mode */
+html.noscroll,html.noscroll body{overflow:hidden}
+.keys{display:none;font-size:13px;color:var(--muted)}
+.card.full{position:fixed;inset:0;z-index:50;border:0;border-radius:0;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.card.full .keys{display:block}
+.card.full .stagecol{display:flex;flex-direction:column;flex:1 1 0;min-height:0}
+.card.full #scene{flex:1 1 0;min-height:0;width:100%;height:100%;background:var(--surface)}
+.card.full .rotate-tip{display:none}
+.card.full nav.chapters{order:4;flex:none;margin:0;padding:8px 12px 10px;border-top:1px solid var(--line);background:var(--surface)}
+.card.full nav.chapters ol{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.card.full nav.chapters button{padding:5px 7px;gap:5px;font-size:13px;line-height:1.25;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
+.card.full nav.chapters button .n{min-width:0}
+.card.full nav.chapters button span:last-child{min-width:0}
+@media (min-width:1100px){.card.full nav.chapters ol{grid-template-columns:repeat(11,minmax(0,1fr))}}
+@media (orientation:landscape) and (min-width:600px){
+  .card.full{grid-template-rows:minmax(0,1fr) auto}
+  .card.full .stagecol{height:100%}
+  .card.full nav.chapters{grid-column:1/-1;grid-row:2}
+}
+@media (orientation:landscape) and (max-height:520px){.card.full nav.chapters button{font-size:12px;padding:3px 6px}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <h1>The Carbon Cycle</h1>
+  <p class="target"><b>Learning target:</b> We are learning how carbon moves among Earth’s spheres so that we can explain how burning fossil fuels changes the atmosphere and the ocean.</p>
+</header>
+
+<main class="wrap">
+  <div class="card" id="stage">
+    <div class="stagecol">
+    <svg id="scene" viewBox="0 0 1200 675" role="img" aria-labelledby="sceneTitle">
+      <title id="sceneTitle">Animated cross-section of Earth showing the atmosphere, a mountain, forest, volcano, ocean, and underground rock layers. The caption below describes each step.</title>
+      <defs>
+        <linearGradient id="g-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9EC4DC"/><stop offset="1" stop-color="#E5F0F4"/></linearGradient>
+        <linearGradient id="g-sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C7C9B"/><stop offset="1" stop-color="#123A51"/></linearGradient>
+        <linearGradient id="g-volc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9C9492"/><stop offset="1" stop-color="#B9B2AF"/></linearGradient>
+        <linearGradient id="g-magma" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E06A30"/><stop offset="1" stop-color="#A83A22"/></linearGradient>
+        <pattern id="p-lime" width="40" height="7" patternUnits="userSpaceOnUse"><rect width="40" height="7" fill="#CBB991"/><path d="M0 .5H40M12 0V7M32 0V7" stroke="#A9976F" stroke-width="1"/></pattern>
+        <clipPath id="clip-sea"><path d="M730 392H1200V575H805C785 500 760 420 730 392Z"/></clipPath>
+        <clipPath id="clip-inset"><rect x="420" y="80" width="360" height="250"/></clipPath>
+        <symbol id="mol" viewBox="-14 -6 28 12" overflow="visible">
+          <circle cx="-8.5" r="4.4" fill="#D23B2B" stroke="#fff" stroke-width="1"/>
+          <circle cx="8.5" r="4.4" fill="#D23B2B" stroke="#fff" stroke-width="1"/>
+          <circle r="5.2" fill="#262626" stroke="#fff" stroke-width="1"/>
+        </symbol>
+        <symbol id="plk" viewBox="-9 -9 18 18" overflow="visible">
+          <circle r="5.2" fill="#EEE7CC" stroke="#AFA276" stroke-width="1"/>
+          <g fill="#E3D9B3" stroke="#AFA276" stroke-width=".8">
+            <circle cx="0" cy="-6.5" r="2.4"/><circle cx="5.6" cy="-3.2" r="2.4"/><circle cx="5.6" cy="3.2" r="2.4"/>
+            <circle cx="0" cy="6.5" r="2.4"/><circle cx="-5.6" cy="3.2" r="2.4"/><circle cx="-5.6" cy="-3.2" r="2.4"/>
+          </g>
+        </symbol>
+        <symbol id="fern" viewBox="-14 -46 28 46" overflow="visible">
+          <path d="M0 0Q2-22 0-44" stroke="#3E6B2F" stroke-width="2.4" fill="none"/>
+          <path d="M1-8L-11-14M1-8L12-15M1-16L-10-23M1-16L11-24M1-24L-8-31M1-24L9-32M0-32L-6-38M0-32L6-39" stroke="#4F8A3A" stroke-width="2.2" stroke-linecap="round"/>
+        </symbol>
+      </defs>
+
+      <!-- sky -->
+      <rect x="0" y="0" width="1200" height="400" fill="url(#g-sky)"/>
+      <g id="rays" opacity="0" stroke="#F4C84F" stroke-width="4" stroke-linecap="round">
+        <path d="M1110 18V4M1110 122V136M1058 70H1044M1162 70H1176M1073 33L1063 23M1147 107L1157 117M1147 33L1157 23M1073 107L1063 117"/>
+      </g>
+      <circle cx="1110" cy="70" r="30" fill="#F2C24A"/>
+      <g id="cloud" fill="#F6F9FA">
+        <ellipse cx="108" cy="124" rx="58" ry="18"/><ellipse cx="140" cy="112" rx="34" ry="20"/><ellipse cx="86" cy="112" rx="28" ry="17"/>
+      </g>
+
+      <!-- background volcano -->
+      <path d="M520 392L620 210L636 202H652L668 210L770 392Z" fill="url(#g-volc)"/>
+      <path d="M648 392L645 210" stroke="#D9612F" stroke-width="5" opacity=".35"/>
+
+      <!-- foreground mountain -->
+      <path id="mountain" d="M0 394V262L52 206L84 230L122 176L170 236L228 394Z" fill="#6E6865"/>
+      <path d="M52 206L60 250M122 176L118 230M84 230L95 280M170 236L160 300" stroke="#5E5855" stroke-width="2" fill="none"/>
+
+      <!-- underground -->
+      <rect x="0" y="392" width="1200" height="283" fill="#8D7E6A"/>
+      <path d="M0 450C160 444 330 458 520 448M0 520C120 514 260 528 420 518M0 590C150 584 300 598 600 586M260 640C380 634 520 648 640 640" stroke="#7B6D5A" stroke-width="2" fill="none"/>
+      <g id="coal"><rect x="240" y="470" width="280" height="18" rx="3" fill="#1D1D1D"/></g>
+      <path d="M402 533Q470 506 538 533" stroke="#6A6058" stroke-width="7" fill="none"/>
+      <ellipse id="oil" cx="470" cy="545" rx="60" ry="13" fill="#2B251F"/>
+      <ellipse id="melt" cx="705" cy="642" rx="44" ry="18" fill="#E36B2C" opacity="0"/>
+      <ellipse id="chamber" cx="655" cy="528" rx="52" ry="20" fill="url(#g-magma)"/>
+      <path id="conduit" d="M655 510C652 470 650 430 648 392" stroke="#D9612F" stroke-width="7" fill="none"/>
+      <path d="M1200 600H845C810 606 765 640 725 675H800C832 652 868 646 905 646H1200Z" fill="#545862"/>
+      <path id="lime" d="M815 586H1200V600H845C832 598 822 592 815 586Z" fill="url(#p-lime)"/>
+      <rect id="sed" x="805" y="578" width="395" height="8" fill="#DCCFA9"/>
+
+      <!-- ocean -->
+      <path d="M730 392H1200V575H805C785 500 760 420 730 392Z" fill="url(#g-sea)"/>
+      <path id="oceanTint" d="M730 392H1200V575H805C785 500 760 420 730 392Z" fill="#7D9A3A" opacity="0"/>
+      <g clip-path="url(#clip-sea)"><path id="waves" d="M720 396q15-6 30 0t30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0 30 0" stroke="#7FC0D8" stroke-width="2" fill="none" opacity=".8"/></g>
+      <g id="plankton">
+        <use href="#plk" x="-9" y="-9" width="18" height="18" transform="translate(890,420)"/>
+        <use href="#plk" x="-9" y="-9" width="18" height="18" transform="translate(925,434)"/>
+        <use href="#plk" x="-9" y="-9" width="18" height="18" transform="translate(960,416)"/>
+        <use href="#plk" x="-9" y="-9" width="18" height="18" transform="translate(995,436)"/>
+        <use href="#plk" x="-9" y="-9" width="18" height="18" transform="translate(1030,420)"/>
+        <use href="#plk" x="-9" y="-9" width="18" height="18" transform="translate(1065,432)"/>
+        <use href="#plk" x="-9" y="-9" width="18" height="18" transform="translate(1100,418)"/>
+      </g>
+
+      <!-- land surface -->
+      <path d="M220 392H730V412H220Z" fill="#59422F"/>
+      <path id="soilRich" d="M220 392H730V412H220Z" fill="#2E2116" opacity="0"/>
+      <path id="river" d="M226 396H724C760 402 800 432 850 470" stroke="#5DA7D2" stroke-width="5" fill="none" opacity="0"/>
+      <path d="M222 392H730" stroke="#6E8B3D" stroke-width="3"/>
+
+      <!-- trees -->
+      <g id="c1"><rect x="234" y="376" width="5" height="16" fill="#4A3526"/><path d="M220 380L236 306L252 380Z" fill="#2E5B38"/></g>
+      <g id="c2"><rect x="260" y="372" width="5" height="20" fill="#4A3526"/><path d="M244 378L262 290L280 378Z" fill="#2B5535"/></g>
+      <g id="c3"><rect x="287" y="378" width="5" height="14" fill="#4A3526"/><path d="M274 382L289 318L304 382Z" fill="#2E5B38"/></g>
+      <rect x="324" y="330" width="12" height="62" fill="#5A3E28"/>
+      <g id="canopy">
+        <ellipse cx="330" cy="312" rx="40" ry="40" fill="#3F7B45"/>
+        <ellipse cx="308" cy="328" rx="22" ry="19" fill="#38713E"/>
+        <ellipse cx="353" cy="324" rx="20" ry="18" fill="#457F49"/>
+      </g>
+      <g id="deer">
+        <g fill="#6A4A2E">
+          <ellipse cx="398" cy="366" rx="17" ry="8"/>
+          <path d="M387 362L379 347L372 350L381 367Z"/>
+          <ellipse cx="373" cy="347" rx="6.5" ry="4"/>
+          <path d="M414 362l6-4l-1 6z"/>
+        </g>
+        <path d="M388 372v18M393 372v18M404 372v18M409 372v18" stroke="#6A4A2E" stroke-width="2.6"/>
+        <path d="M372 343l-4-9M376 343l3-9M369 336l-4 1M380 336l3-2" stroke="#5B3E25" stroke-width="1.6" fill="none"/>
+      </g>
+
+      <!-- human activities -->
+      <g id="human" opacity="0">
+        <path d="M462 479H505V392" stroke="#59646A" stroke-width="6" fill="none"/>
+        <path d="M450 392V533" stroke="#59646A" stroke-width="4"/>
+        <path d="M438 392L450 336L462 392M442 372H458M446 352H454" stroke="#3E474C" stroke-width="2.5" fill="none"/>
+        <rect x="515" y="340" width="70" height="52" fill="#7A838A"/>
+        <rect x="566" y="280" width="14" height="62" fill="#9AA2A8"/>
+        <rect x="530" y="300" width="10" height="42" fill="#9AA2A8"/>
+        <path d="M522 352h12v9h-12zM542 352h12v9h-12zM562 352h12v9h-12z" fill="#C9D1D6"/>
+        <rect x="590" y="386" width="140" height="6" fill="#4B4F52"/>
+        <g id="car">
+          <rect x="0" y="-12" width="30" height="9" rx="2" fill="#2E5E8C"/>
+          <path d="M6-12l4-6h10l4 6z" fill="#2E5E8C"/>
+          <circle cx="7" cy="-2" r="3" fill="#222"/><circle cx="23" cy="-2" r="3" fill="#222"/>
+        </g>
+      </g>
+
+      <g id="arrows"></g>
+      <g id="fx"></g>
+      <g id="labels"></g>
+
+      <!-- fossil fuel inset -->
+      <g id="inset" opacity="0">
+        <rect x="390" y="30" width="420" height="320" rx="12" fill="#FFFFFF" stroke="#B5C0C5" stroke-width="2"/>
+        <text id="insetTitle" x="600" y="62" text-anchor="middle" class="callout" style="stroke:none"></text>
+        <g clip-path="url(#clip-inset)">
+          <rect x="420" y="80" width="360" height="250" fill="#DCEAF0"/>
+          <rect id="iBase" x="420" y="305" width="360" height="25" fill="#8D7E6A"/>
+          <rect id="peat" x="420" y="290" width="360" height="15" fill="#6B4A2A" opacity="0"/>
+          <g id="ferns"></g>
+          <rect id="iWater" x="420" y="262" width="360" height="28" fill="#7FB3C9" opacity=".7"/>
+          <rect id="L1" x="420" y="270" width="360" height="20" fill="#D8C08A" opacity="0"/>
+          <rect id="L2" x="420" y="250" width="360" height="20" fill="#A39581" opacity="0"/>
+          <rect id="L3" x="420" y="230" width="360" height="20" fill="#CDB27A" opacity="0"/>
+          <g id="press" opacity="0" fill="#C0392B">
+            <path d="M494 186h12v22h8l-14 16-14-16h8z"/><path d="M594 186h12v22h8l-14 16-14-16h8z"/><path d="M694 186h12v22h8l-14 16-14-16h8z"/>
+          </g>
+          <text id="pressLbl" x="600" y="172" text-anchor="middle" class="callout sm" opacity="0" style="font-weight:700">Heat and pressure</text>
+          <text id="coalLbl" x="600" y="322" text-anchor="middle" class="callout inv sm" opacity="0" style="font-weight:700">Coal</text>
+        </g>
+      </g>
+
+      <!-- HUD -->
+      <g id="hud">
+        <rect id="hudBox" x="14" y="14" width="250" height="54" rx="8" fill="#FFFFFF" opacity=".92"/>
+        <text class="hud-l" x="28" y="34">Time scale</text>
+        <text class="hud-v" id="hudVal" x="28" y="58"></text>
+      </g>
+      <g id="meter" opacity="0" transform="translate(1090,112)">
+        <rect width="94" height="276" rx="8" fill="#FFFFFF" opacity=".94"/>
+        <text x="47" y="22" text-anchor="middle" style="font-weight:700;font-size:13px;fill:#16222A">CO₂ in air</text>
+        <rect x="37" y="36" width="20" height="180" rx="3" fill="#E1E7EA"/>
+        <rect id="meterFill" x="37" y="180" width="20" height="36" rx="3" fill="#C0392B"/>
+        <text id="meterPpm" x="47" y="240" text-anchor="middle" style="font-weight:800;font-size:16px;fill:#16222A">280 ppm</text>
+        <text id="meterYr" x="47" y="262" text-anchor="middle" style="font-size:13px;fill:#4D5E67">1850</text>
+      </g>
+    </svg>
+    <div class="progress"><div id="prog"></div></div>
+    <p class="rotate-tip">Tip: turn your phone sideways for a bigger view.</p>
+    </div>
+    <div class="side">
+    <div class="chapbar"><p class="chapno" id="chapNo"></p><h2 id="chapTitle"></h2></div>
+    <p class="caption" id="caption" aria-live="polite"></p>
+    <div class="controls">
+      <div class="grp transport">
+        <button class="btn" id="prev">Back</button>
+        <button class="btn primary" id="play">Play</button>
+        <button class="btn" id="replay">Replay</button>
+        <button class="btn" id="next">Next</button>
+      </div>
+      <span class="spacer"></span>
+      <label class="tog"><input type="checkbox" id="narrate"> Narrate</label>
+      <label class="tog"><input type="checkbox" id="auto" checked> Play chapters in a row</label>
+      <div class="seg" role="group" aria-label="Speed">
+        <button data-speed="0.7" aria-pressed="false">Slower</button>
+        <button data-speed="1" aria-pressed="true">Normal</button>
+        <button data-speed="1.4" aria-pressed="false">Faster</button>
+      </div>
+      <button class="btn" id="fs" aria-pressed="false" title="Full screen (F)">Full screen</button>
+      <span class="keys">Space: play/pause. Arrow keys: change chapter. Esc: exit full screen.</span>
+    </div>
+    </div>
+  </div>
+
+  <nav class="chapters" aria-label="Chapters"><ol id="chapList"></ol></nav>
+
+  <p class="key">
+    <span><svg width="28" height="12" viewBox="-14 -6 28 12"><use href="#mol" x="-14" y="-6" width="28" height="12"/></svg>CO₂ molecule (carbon bonded to two oxygen)</span>
+    <span><i class="k" style="background:#3E9A3E"></i>Carbon in living things</span>
+    <span><i class="k" style="background:#DEA737"></i>Dissolved carbon and shells</span>
+    <span><i class="k" style="background:#8A8F93"></i>Rock fragments</span>
+    <span><i class="k" style="background:#E36B2C"></i>Magma</span>
+    <span><i class="k" style="background:#1B1B1B"></i>Fossil fuels</span>
+  </p>
+</main>
+
+<footer class="wrap">Content adapted from <a href="https://ugc.berkeley.edu/background-content/carbon-cycle/" rel="noopener">Understanding Global Change: Carbon cycle</a>, University of California Museum of Paleontology.</footer>
+
+<script>
+(function(){
+const NS = 'http://www.w3.org/2000/svg';
+const $ = id => document.getElementById(id);
+const svg = $('scene'), FX = $('fx'), LAB = $('labels'), ARR = $('arrows');
+const COL = {org:'#3E9A3E', carb:'#DEA737', rock:'#8A8F93', magma:'#E36B2C', fossil:'#1B1B1B', shell:'#EEE7CC'};
+
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const op = (e, v) => (typeof e === 'string' ? $(e) : e).setAttribute('opacity', v);
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = k => k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
+const fmt = n => Math.round(n).toLocaleString('en-US');
+
+/* ---------- timeline engine ---------- */
+let clock = 0, actions = [], loops = [], beats = [], beatI = -1, dur = 1, chapter = 0;
+let playing = false, speed = 1, ended = false, endHold = 0, last = null;
+function tw(at, d, fn){ actions.push({at, d, fn, last:-1}); }
+function at(t, fn){ tw(t, 0, fn); }
+function loop(t0, t1, fn){ loops.push({t0, t1, fn}); }
+function say(t, text){ beats.push({at:t, text}); }
+function hud(t, text){ at(t, () => { $('hudVal').textContent = text; }); }
+function fitHud(){ const w = $('hudVal').getComputedTextLength(); $('hudBox').setAttribute('width', Math.max(160, w + 30)); }
+/* keep scene text readable: when the scene is drawn small, enlarge its labels, HUD, and CO2 meter */
+let TS = 1;
+function fitText(){
+  const s = svg.getBoundingClientRect().width / 1200;
+  if (!s) return;
+  TS = Math.min(1.8, Math.max(1, 12.5 / (16 * s)));
+  svg.style.setProperty('--ts', TS.toFixed(3));
+  svg.style.setProperty('--tsi', Math.min(TS, 1.45).toFixed(3));
+  const hs = Math.min(TS, 1.4);
+  $('hud').setAttribute('transform', 'translate(14 14) scale(' + hs.toFixed(3) + ') translate(-14 -14)');
+  $('inset').setAttribute('transform', 'translate(' + (225 * (TS - 1) / .8).toFixed(1) + ' 0)');
+  const ms = Math.min(TS, 1.25);
+  $('meter').setAttribute('transform', 'translate(' + (1186 - 94 * ms).toFixed(1) + ',' + (112 - 40 * (ms - 1)).toFixed(1) + ') scale(' + ms.toFixed(3) + ')');
+  fitHud();
+}
+function label(x, y, text, cls, anchor){
+  const t = el('text', {x, y, class:'callout ' + (cls || ''), 'text-anchor': anchor || 'middle', opacity:0}, LAB);
+  t.textContent = text; return t;
+}
+function show(t, node, d){ tw(t, d || .8, k => op(node, k)); }
+function hide(t, node, d){ tw(t, d || .8, k => op(node, 1 - k)); }
+
+function icon(kind, parent){
+  if (kind === 'co2'){
+    const g = el('g', {opacity:0}, parent);
+    el('use', {href:'#mol', x:-13, y:-5.5, width:26, height:11}, g);
+    return g;
+  }
+  if (kind === 'shell'){
+    const g = el('g', {opacity:0}, parent);
+    el('use', {href:'#plk', x:-6, y:-6, width:12, height:12}, g);
+    return g;
+  }
+  const g = el('g', {opacity:0}, parent);
+  el('circle', {r: kind === 'magma' ? 6 : 5, fill: COL[kind], stroke:'#fff', 'stroke-width':1.3}, g);
+  return g;
+}
+/* moving icons along a path, staggered, repeating between t0 and t1 */
+function flow(d, o){
+  const p = el('path', {d, fill:'none', stroke:'none'}, FX);
+  const L = p.getTotalLength(), n = o.n || 4, per = o.per || 4, kind = o.kind || 'co2';
+  const items = []; for (let i = 0; i < n; i++) items.push(icon(kind, FX));
+  loop(o.t0, o.t1 + per, c => {
+    items.forEach((g, i) => {
+      const local = c - o.t0 - i * per / n;
+      const startOfCycle = c - (((local % per) + per) % per);
+      if (local < 0 || startOfCycle > o.t1){ g.setAttribute('opacity', 0); return; }
+      const f = (local % per) / per, pt = p.getPointAtLength(f * L);
+      g.setAttribute('transform', 'translate(' + pt.x.toFixed(1) + ',' + pt.y.toFixed(1) + ')');
+      g.setAttribute('opacity', Math.max(0, Math.min(1, f / .1, (1 - f) / .12)).toFixed(2));
+    });
+  });
+}
+function mtnY(x){
+  const v = [[0,262],[52,206],[84,230],[122,176],[170,236],[228,394]];
+  for (let i = 0; i < v.length - 1; i++) if (x <= v[i+1][0]) return lerp(v[i][1], v[i+1][1], (x - v[i][0]) / (v[i+1][0] - v[i][0]));
+  return 394;
+}
+
+/* ---------- scene reset ---------- */
+const FERN_X = [440, 485, 530, 575, 620, 665, 710, 755];
+function resetScene(){
+  FX.innerHTML = ''; LAB.innerHTML = ''; ARR.innerHTML = '';
+  ['rays','human','meter','inset','river','melt','soilRich','oceanTint','peat','L1','L2','L3','press','pressLbl','coalLbl'].forEach(id => op(id, 0));
+  op('lime', 1); op('iWater', .7);
+  $('sed').setAttribute('y', 578); $('sed').setAttribute('height', 8);
+  $('canopy').setAttribute('transform', '');
+  $('deer').setAttribute('transform', '');
+  ['c1','c2','c3'].forEach(id => { $(id).setAttribute('transform', ''); op(id, 1); });
+  $('chamber').setAttribute('opacity', 1);
+  $('iBase').setAttribute('y', 305); $('iBase').setAttribute('height', 25);
+  $('peat').setAttribute('y', 290); $('peat').setAttribute('height', 15); $('peat').setAttribute('fill', '#6B4A2A');
+  $('car').setAttribute('transform', 'translate(600,386)');
+  const ferns = $('ferns'); ferns.innerHTML = '';
+  FERN_X.forEach(x => {
+    const g = el('g', {'data-x':x}, ferns);
+    el('use', {href:'#fern', x:x - 14, y:244, width:28, height:46}, g);
+  });
+  $('insetTitle').textContent = '';
+}
+
+/* ---------- chapters ---------- */
+const CH = [
+{title:'Carbon is everywhere', dur:23, build(){
+  hud(0, 'Today');
+  say(.3, 'Carbon is the main building block of life. It’s in the DNA, proteins, sugars, and fats of every living thing.');
+  say(5.5, 'Carbon is stored in all four parts of the Earth system: the atmosphere, biosphere, hydrosphere, and geosphere.');
+  const a = label(600, 128, 'Atmosphere'), b = label(330, 258, 'Biosphere'), h = label(1010, 505, 'Hydrosphere', 'inv'), g = label(330, 628, 'Geosphere', 'inv');
+  show(6, a); show(7.3, b); show(8.6, h); show(9.9, g);
+  say(12, 'Most of Earth’s carbon is locked in rock. Much smaller amounts are in the ocean, soil, living things, and air.');
+  say(17.5, 'Carbon doesn’t stay put. The way it moves among these spheres is called the carbon cycle.');
+  flow('M560 150C620 120 700 120 760 150', {t0:17.5, t1:22, n:3, per:3.5});
+}},
+{title:'Photosynthesis', dur:25, build(){
+  hud(0, 'Hours to years');
+  show(0, 'rays', 1.5);
+  loop(0, 25, c => $('rays').setAttribute('transform', 'rotate(' + (c * 8) + ' 1110 70)'));
+  say(.3, 'Plants take carbon dioxide (CO₂) out of the air through tiny openings in their leaves.');
+  flow('M250 110C262 190 290 260 312 300', {t0:1.5, t1:20, n:3, per:4.2});
+  flow('M420 100C405 180 370 250 348 298', {t0:2.2, t1:20, n:3, per:4.2});
+  flow('M335 70C334 150 332 230 330 290', {t0:3, t1:20, n:3, per:4.2});
+  say(6.5, 'Using energy from sunlight, they combine CO₂ and water to make sugar. This is photosynthesis.');
+  const e1 = label(760, 108, '6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂', 'eq');
+  const e2 = label(760, 134, 'carbon dioxide + water → sugar + oxygen', 'sm');
+  show(7, e1); show(7.6, e2);
+  say(12.5, 'The carbon in that sugar becomes part of the plant’s leaves, wood, and roots.');
+  tw(12.5, 6, k => $('canopy').setAttribute('transform', 'translate(330 352) scale(' + lerp(1, 1.14, k) + ') translate(-330 -352)'));
+  say(19, 'Think: most of a tree’s mass comes from the air, not the soil. How does photosynthesis explain that?');
+}},
+{title:'Food webs and respiration', dur:25, build(){
+  hud(0, 'Hours to weeks');
+  at(0, () => $('deer').setAttribute('transform', 'translate(130 0)'));
+  tw(.4, 4.2, k => $('deer').setAttribute('transform', 'translate(' + lerp(130, 0, k).toFixed(1) + ' ' + (Math.abs(Math.sin(k * 22)) * -1.5).toFixed(1) + ')'));
+  say(.3, 'A deer eats leaves from the tree. The plant’s carbon becomes part of the deer’s body.');
+  flow('M352 330Q364 338 369 347', {t0:4.8, t1:9.5, n:3, per:1.8, kind:'org'});
+  const f = label(470, 318, 'Eating moves carbon', 'sm', 'start'); show(5, f);
+  say(7, 'Every living thing breaks down sugar for energy. This is cellular respiration, and it releases CO₂.');
+  flow('M366 344C362 280 360 200 362 120', {t0:8, t1:21, n:3, per:4});
+  flow('M300 300C292 240 284 170 276 110', {t0:9, t1:21, n:3, per:4});
+  const r = label(392, 210, 'Respiration releases CO₂', '', 'start'); show(8.5, r);
+  say(13.5, 'Plants respire too, day and night. Photosynthesis and respiration move carbon back and forth quickly.');
+  say(19.5, 'Carbon also moves up the food web when a predator eats an herbivore.');
+}},
+{title:'Decomposition and soil', dur:23, build(){
+  hud(0, 'Days to centuries');
+  say(.3, 'When leaves fall and living things die, they don’t just disappear.');
+  [[308,334,'#8FAE3C'],[348,338,'#C39A2E'],[330,330,'#A3B03A']].forEach((L, i) => {
+    const lf = el('ellipse', {rx:5, ry:2.6, fill:L[2], opacity:0}, FX);
+    const t0 = .8 + i * .9;
+    tw(t0, 3.2, k => {
+      const x = L[0] + Math.sin(k * 7) * 9, y = lerp(L[1], 391, k);
+      lf.setAttribute('cx', x); lf.setAttribute('cy', y); lf.setAttribute('transform', 'rotate(' + (Math.sin(k*7)*35) + ' ' + x + ' ' + y + ')');
+      lf.setAttribute('opacity', 1);
+    });
+    tw(t0 + 4, 2.5, k => lf.setAttribute('opacity', 1 - k));
+  });
+  say(5.5, 'Decomposers like bacteria and fungi break down the remains. Some of the carbon becomes part of the soil.');
+  const microbes = [];
+  for (let i = 0; i < 22; i++) microbes.push(el('circle', {r:1.8, fill:'#E9D8AE', opacity:0, cx:240 + i * 22, cy:403}, FX));
+  loop(5.5, 23, c => microbes.forEach((m, i) => {
+    m.setAttribute('cx', (240 + i * 22 + Math.sin(c * 2 + i) * 5).toFixed(1));
+    m.setAttribute('cy', (402 + Math.cos(c * 2.6 + i * 1.7) * 5).toFixed(1));
+    m.setAttribute('opacity', Math.min(1, (c - 5.5) / 1.5));
+  }));
+  tw(6, 6, k => op('soilRich', k * .55));
+  const d = label(475, 436, 'Decomposers at work in the soil', 'inv sm'); show(6, d);
+  say(11.5, 'Decomposers respire too, so some of that carbon returns to the air as CO₂.');
+  flow('M286 406C284 330 280 240 276 150', {t0:11.5, t1:21, n:3, per:4.4});
+  flow('M420 406C424 330 430 250 436 160', {t0:12.3, t1:21, n:3, per:4.4});
+  say(17, 'In the Arctic, frozen soil called permafrost holds huge amounts of carbon. As it thaws, it releases CO₂ and methane.');
+}},
+{title:'The ocean and the air', dur:23, build(){
+  hud(0, 'Years to centuries');
+  say(.3, 'Where the ocean meets the air, CO₂ dissolves into seawater.');
+  flow('M860 120C862 240 866 330 870 396', {t0:1, t1:20, n:3, per:4});
+  flow('M940 110C942 220 946 320 950 396', {t0:1.8, t1:20, n:3, per:4});
+  flow('M870 400C872 430 880 460 890 490', {t0:4.5, t1:21, n:3, per:3.5, kind:'carb'});
+  flow('M950 400C952 430 960 460 965 500', {t0:5.2, t1:21, n:3, per:3.5, kind:'carb'});
+  const a = label(845, 260, 'CO₂ dissolves', '', 'end'); show(1.5, a);
+  say(6.5, 'The ocean releases CO₂ back into the air, too. Cold water holds more dissolved gas than warm water.');
+  flow('M1045 470C1045 430 1043 410 1042 398', {t0:6.5, t1:20, n:2, per:3, kind:'carb'});
+  flow('M1042 396C1042 320 1046 230 1052 140', {t0:7.5, t1:20, n:3, per:4});
+  const b = label(1066, 260, 'CO₂ released', '', 'start'); show(7.5, b);
+  say(12, 'The ocean holds about 40 times more carbon than the atmosphere. It has soaked up a large share of the CO₂ that humans have released.');
+  say(18, 'That extra CO₂ makes seawater more acidic. This is called ocean acidification.');
+}},
+{title:'Shells, sediment, and limestone', dur:30, build(){
+  hud(0, 'Days to years');
+  at(0, () => op('lime', 0));
+  say(.3, 'Tiny ocean organisms called plankton take in dissolved carbon.');
+  flow('M900 500C920 470 950 450 975 432', {t0:.8, t1:7, n:4, per:2.6, kind:'carb'});
+  flow('M1080 505C1075 475 1070 450 1066 438', {t0:1.2, t1:7, n:3, per:2.6, kind:'carb'});
+  const p = label(995, 470, 'Plankton', 'inv'); show(1, p);
+  say(5.5, 'Many use it to build shells of calcium carbonate (CaCO₃). When they die, their shells sink.');
+  const xs = [890, 925, 960, 995, 1030, 1065, 1100];
+  xs.forEach((x, i) => {
+    for (let r = 0; r < 3; r++){
+      const s = icon('shell', FX), t0 = 6 + i * .35 + r * 3.3, y0 = i % 2 ? 434 : 418;
+      tw(t0, 2.6, k => { s.setAttribute('transform', 'translate(' + (x + Math.sin(k * 5 + i) * 6).toFixed(1) + ',' + lerp(y0, 572, k).toFixed(1) + ')'); s.setAttribute('opacity', 1); });
+      tw(t0 + 2.6, .6, k => s.setAttribute('opacity', 1 - k));
+    }
+  });
+  hud(8, 'Thousands of years');
+  say(11.5, 'The shells pile up on the seafloor, layer after layer, as sediment.');
+  tw(8.5, 9, k => { const h = lerp(8, 18, k); $('sed').setAttribute('y', 586 - h); $('sed').setAttribute('height', h); });
+  const s = label(1000, 560, 'Sediment', 'inv sm'); show(11.5, s);
+  tw(15, 12, k => { const v = lerp(10000, 2000000, k * k), m = Math.pow(10, Math.floor(Math.log10(v)) - 1); $('hudVal').textContent = 'About ' + fmt(Math.round(v / m) * m) + ' years'; });
+  say(17.5, 'Over millions of years, the weight of new layers compacts and cements the old ones into limestone, a sedimentary rock.');
+  const arrows = el('g', {fill:'#F2B300', opacity:0}, FX);
+  [900, 1000, 1100].forEach(x => el('path', {d:'M' + (x-5) + ' 520h10v16h7l-12 14-12-14h7z'}, arrows));
+  show(17.5, arrows); hide(24, arrows);
+  tw(19, 4, k => { op('lime', k); const h = lerp(18, 8, k); $('sed').setAttribute('y', 586 - h); $('sed').setAttribute('height', h); });
+  const l = label(1000, 622, 'Limestone', 'inv'); show(21, l);
+  say(24.5, 'If you look closely at some limestone, you can see the fossil shells it’s made of.');
+}},
+{title:'Weathering and erosion', dur:28, build(){
+  hud(0, 'Thousands to millions of years');
+  say(.3, 'CO₂ in the air dissolves in rainwater and forms a weak acid called carbonic acid.');
+  flow('M330 175C270 155 210 140 160 128', {t0:.5, t1:7, n:3, per:3});
+  const e1 = label(390, 96, 'CO₂ + H₂O → H₂CO₃', 'eq'), e2 = label(390, 120, 'carbonic acid', 'sm');
+  show(2, e1); show(2.5, e2);
+  const drops = [];
+  for (let i = 0; i < 26; i++){ const x = 40 + (i * 37) % 132; drops.push({x, y1: mtnY(x), ph: (i * .37) % 1, e: el('path', {d:'', stroke:'#4F92BF', 'stroke-width':2, 'stroke-linecap':'round', opacity:0}, FX)}); }
+  loop(3, 22, c => drops.forEach(d => {
+    if (c > 22){ d.e.setAttribute('opacity', 0); return; }
+    const f = ((c - 3) / 1.1 + d.ph) % 1, y = lerp(140, d.y1, f);
+    d.e.setAttribute('d', 'M' + d.x + ' ' + y.toFixed(1) + 'l-2 7');
+    d.e.setAttribute('opacity', c < 3 ? 0 : .9);
+  }));
+  say(6.5, 'When that slightly acidic rain falls on rock, it slowly breaks the rock down. This is chemical weathering.');
+  const w = label(196, 250, 'Weathering', '', 'start'); show(7, w);
+  say(13, 'Weathering removes CO₂ from the air and locks the carbon into dissolved minerals.');
+  show(12.5, 'river', 1.5);
+  flow('M140 200C175 260 205 340 226 396L724 396C760 402 800 432 850 470', {t0:13, t1:26, n:9, per:9, kind:'rock'});
+  flow('M226 396L724 396C760 402 800 432 850 470', {t0:15, t1:26, n:6, per:7.5, kind:'carb'});
+  const r = label(480, 434, 'Rivers carry minerals to the ocean', 'inv sm'); show(14, r);
+  say(19, 'Rivers carry those minerals and bits of sediment to the ocean, where they can become shells and limestone.');
+}},
+{title:'Subduction and volcanoes', dur:30, build(){
+  hud(0, 'Millions of years');
+  say(.3, 'Earth’s outer layer is broken into plates. Here, a dense ocean plate sinks beneath a continent. This is subduction.');
+  const move = el('path', {d:'M1170 624H860C822 630 784 652 760 672', stroke:'#C9CED6', 'stroke-width':3, fill:'none', 'stroke-dasharray':'14 10', opacity:0}, FX);
+  show(.5, move);
+  loop(.5, 30, c => move.setAttribute('stroke-dashoffset', (c * 18).toFixed(1)));
+  const a = label(1060, 640, 'Ocean plate', 'inv sm'), b = label(330, 660, 'Continental plate', 'inv sm'), s = label(880, 670, 'Subduction', 'inv sm');
+  show(1, a); show(1.5, b); show(2, s);
+  say(7, 'The sinking plate carries carbon-rich limestone and sediment deep into Earth.');
+  flow('M1150 593L850 597C812 606 772 636 742 668', {t0:6.5, t1:17, n:5, per:8, kind:'carb'});
+  say(13.5, 'Heat and pressure melt rock and release its carbon. Magma rises toward the surface.');
+  show(12, 'melt', 2);
+  flow('M712 630C696 600 674 570 660 545', {t0:13.5, t1:25, n:4, per:3, kind:'magma'});
+  flow('M655 512C652 470 650 430 648 392L645 214', {t0:15, t1:25, n:4, per:3, kind:'magma'});
+  loop(13.5, 30, c => $('chamber').setAttribute('opacity', (.8 + Math.sin(c * 4) * .2).toFixed(2)));
+  const m = label(655, 533, 'Magma', 'inv sm'); show(14, m);
+  say(19, 'Volcanoes release that carbon back into the atmosphere as CO₂. The whole trip can take millions of years.');
+  const puffs = [];
+  for (let i = 0; i < 9; i++) puffs.push(el('circle', {r:6, fill:'#7E7774', opacity:0}, FX));
+  loop(18.5, 30, c => puffs.forEach((p, i) => {
+    const f = ((c - 18.5) / 3.2 + i / 9) % 1;
+    p.setAttribute('cx', (644 + Math.sin(i * 2.3) * 40 * f).toFixed(1));
+    p.setAttribute('cy', (198 - f * 130).toFixed(1));
+    p.setAttribute('r', (6 + f * 18).toFixed(1));
+    p.setAttribute('opacity', ((1 - f) * .7).toFixed(2));
+  }));
+  flow('M644 198C640 150 620 110 590 70', {t0:19, t1:28, n:3, per:3.5});
+  flow('M646 198C650 150 670 110 700 72', {t0:19.6, t1:28, n:3, per:3.5});
+  const v = label(712, 168, 'Volcano releases CO₂', '', 'start'); show(19.5, v);
+  say(25, 'Today, volcanoes release far less CO₂ each year than human activities do.');
+}},
+{title:'How fossil fuels form', dur:35, build(){
+  hud(0, '300 million years ago');
+  show(0, 'inset', 1);
+  at(0, () => $('insetTitle').textContent = 'A swamp forest');
+  say(.3, 'About 300 million years ago, swampy forests covered huge areas of land.');
+  at(5.5, () => $('insetTitle').textContent = 'Plants die and pile up');
+  say(5.5, 'When the plants died, they fell into low-oxygen swamp water and were buried before they could fully decay.');
+  const ferns = Array.from($('ferns').children);
+  ferns.forEach((g, i) => {
+    const x = +g.dataset.x, t0 = 6 + i * .25;
+    tw(t0, 1.6, k => g.setAttribute('transform', 'rotate(' + (k * (i % 2 ? 82 : -82)) + ' ' + x + ' 290)'));
+    tw(t0 + 1.8, 1.5, k => op(g, 1 - k));
+  });
+  show(7, 'peat', 2.5);
+  at(10.5, () => $('insetTitle').textContent = 'Sediment buries the plants');
+  say(10.5, 'Layer after layer of sediment piled on top, pressing down on the plant material.');
+  tw(11, 1.2, k => { op('L1', k); op('iWater', .7 * (1 - k)); });
+  show(12.6, 'L2', 1.2); show(14.2, 'L3', 1.2);
+  tw(11, 12, k => $('hudVal').textContent = 'Time passing: ' + Math.round(lerp(1, 60, k)) + ' million years');
+  at(17, () => $('insetTitle').textContent = 'Heat and pressure make coal');
+  say(17, 'Over millions of years, heat and pressure turned the plant material into coal.');
+  show(17, 'press', .6); show(17, 'pressLbl', .6);
+  tw(18, 4, k => {
+    $('peat').setAttribute('height', lerp(15, 6, k));
+    $('iBase').setAttribute('y', lerp(305, 296, k)); $('iBase').setAttribute('height', lerp(25, 34, k));
+    $('peat').setAttribute('fill', k < .5 ? '#6B4A2A' : (k < .8 ? '#3A2A1C' : '#151515'));
+  });
+  show(21.5, 'coalLbl', .6);
+  say(23, 'Oil and natural gas formed in a similar way, from plankton buried in ancient seafloor mud.');
+  hide(23, 'inset', 1);
+  const c = label(380, 484, 'Coal', 'inv sm'), o = label(470, 576, 'Oil and natural gas', 'inv sm');
+  show(24, c); show(24.5, o);
+  flow('M430 615C440 592 455 570 465 554', {t0:24.5, t1:33, n:3, per:3, kind:'fossil'});
+  flow('M510 618C505 592 490 570 478 554', {t0:25, t1:33, n:3, per:3, kind:'fossil'});
+  say(29, 'Locked underground, this carbon stays out of the cycle for millions of years, unless people dig it up.');
+  hud(29, 'Millions of years');
+}},
+{title:'Burning fossil fuels', dur:37, build(){
+  hud(0, 'Year 1850');
+  show(0, 'human', 1); show(0, 'meter', 1);
+  say(.3, 'Today, people dig up coal, oil, and natural gas and burn them for electricity, heat, and transportation.');
+  flow('M300 479L505 479L505 392L520 380', {t0:1.5, t1:34, n:6, per:4.5, kind:'fossil'});
+  flow('M450 540L450 392L514 384', {t0:2, t1:34, n:4, per:4, kind:'fossil'});
+  flow('M573 280C580 220 610 160 660 110', {t0:3, t1:35, n:4, per:4});
+  flow('M573 280C600 230 680 190 770 150', {t0:3.6, t1:35, n:4, per:4.6});
+  flow('M535 300C530 240 520 180 505 120', {t0:4.2, t1:35, n:3, per:4});
+  loop(2, 37, c => $('car').setAttribute('transform', 'translate(' + (600 + ((c * 22) % 96)).toFixed(1) + ',386)'));
+  flow('M668 384C672 330 678 260 690 190', {t0:4, t1:35, n:3, per:4});
+  const pl = label(550, 268, 'Power plant', 'sm', 'end'); show(1, pl);
+  tw(4, 26, k => {
+    const yr = Math.round(lerp(1850, 2025, k));
+    const ppm = 280 + 145 * Math.pow(k, 2.4);
+    $('meterYr').textContent = yr; $('meterPpm').textContent = Math.round(ppm) + ' ppm';
+    $('hudVal').textContent = 'Year ' + yr;
+    const h = (ppm - 250) / 200 * 180;
+    $('meterFill').setAttribute('y', 216 - h); $('meterFill').setAttribute('height', h);
+  });
+  say(6.5, 'Burning returns carbon to the air in decades. That carbon took millions of years to bury.');
+  say(12, 'That’s hundreds to thousands of times faster than it was buried, and much faster than weathering can remove it.');
+  say(17.5, 'Cutting and burning forests releases even more carbon and leaves fewer trees to take it back in.');
+  tw(17.5, 1.6, k => $('c1').setAttribute('transform', 'rotate(' + (-85 * k) + ' 236 392)'));
+  tw(18.4, 1.6, k => $('c2').setAttribute('transform', 'rotate(' + (-85 * k) + ' 262 392)'));
+  hide(21, 'c1', 1.5); hide(21.8, 'c2', 1.5);
+  flow('M232 386C232 300 236 220 240 140', {t0:19, t1:35, n:3, per:4.2});
+  flow('M262 386C264 300 270 220 280 150', {t0:19.8, t1:35, n:3, per:4.2});
+  const df = label(214, 290, 'Deforestation', 'sm', 'end'); show(18, df);
+  say(23.5, 'Since about 1850, CO₂ in the air has climbed from about 280 to about 425 parts per million (ppm).');
+  say(29.5, 'The extra CO₂ strengthens the greenhouse effect, warming Earth. It also dissolves into the ocean, making it more acidic.');
+  flow('M910 140C912 250 916 330 920 396', {t0:29, t1:35, n:3, per:3.6});
+  tw(30, 3, k => op('oceanTint', k * .28));
+  const ac = label(925, 500, 'More acidic ocean', 'inv'); show(30.5, ac);
+}},
+{title:'The whole cycle', dur:32, build(){
+  hud(0, 'All timescales');
+  show(0, 'human', 1); show(0, 'river', 1);
+  const A = [
+    ['fast','Photosynthesis','M300 130C305 200 315 260 322 290',[318,116],'end'],
+    ['fast','Respiration','M366 344C368 270 374 190 382 124',[374,110],'start'],
+    ['fast','Decomposition','M345 382L345 404',[395,432]],
+    ['fast','CO₂ dissolves','M880 140C880 250 882 330 884 392',[866,252],'end'],
+    ['fast','Ocean releases CO₂','M965 392C965 320 967 240 970 140',[1078,252]],
+    ['slow','Weathering','M70 148C80 180 92 205 104 228',[110,268]],
+    ['slow','Runoff','M226 396L724 396C760 402 800 432 850 470',[600,422]],
+    ['slow','Burial into limestone','M1004 446C1004 500 1004 545 1004 576',[1188,520],'end'],
+    ['slow','Subduction','M1120 594L860 597C818 606 778 634 748 662',[960,640]],
+    ['slow','Volcanism','M655 512C652 470 650 430 648 392L645 210C643 170 640 130 636 84',[700,164]],
+    ['slow','Fossil fuel formation','M300 414C310 438 320 455 330 468',[214,452]],
+    ['human','Burning fossil fuels','M440 479L505 479L505 394L573 340L573 280C573 230 582 180 594 120',[650,98]],
+    ['human','Deforestation','M262 380C260 300 256 220 252 150',[204,168]]
+  ];
+  const C = {fast:'#1C7A57', slow:'#5546A3', human:'#C0392B'}, T = {fast:1, slow:9, human:17};
+  A.forEach((a, i) => {
+    const g = el('g', {opacity:0}, ARR);
+    el('path', {d:a[2], class:'arrowcase'}, g);
+    el('path', {d:a[2], class:'arrowline', stroke:C[a[0]], 'stroke-dasharray': a[0] === 'slow' ? '9 6' : ''}, g);
+    const t0 = T[a[0]] + (i % 5) * .35;
+    show(t0, g, .8);
+    const l = label(a[3][0], a[3][1], a[1], 'sm', a[4]); l.style.fontWeight = 700; l.style.fill = C[a[0]]; show(t0 + .2, l);
+    const kind = a[0] === 'slow' ? (a[1] === 'Volcanism' ? 'co2' : (a[1] === 'Fossil fuel formation' ? 'fossil' : 'carb')) : 'co2';
+    flow(a[2], {t0:t0 + .5, t1:31, n:a[0] === 'slow' ? 2 : 3, per:a[0] === 'slow' ? 7 : 3.6, kind: a[1] === 'Decomposition' ? 'org' : kind});
+  });
+  say(.3, 'Put it all together. The fast cycle moves carbon among the air, living things, soil, and ocean in hours to centuries.');
+  say(8.5, 'The slow cycle moves carbon through rock by weathering, burial, subduction, and volcanoes over thousands to millions of years.');
+  say(16.5, 'Human activities, mainly burning fossil fuels, have sped up one part of the cycle dramatically.');
+  say(23.5, 'Think: why does CO₂ build up in the atmosphere when we release it faster than the slow cycle can remove it?');
+}}
+];
+
+/* ---------- player ---------- */
+const capEl = $('caption'), prog = $('prog'), playBtn = $('play'), nextBtn = $('next');
+let speaking = false, speakStart = 0;
+function speak(text){
+  if (!$('narrate').checked || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const t = text.replace(/CaCO₃/g, 'C a C O 3').replace(/H₂CO₃/g, 'H 2 C O 3').replace(/CO₂/g, 'C O 2').replace(/\(ppm\)/g, '');
+  const u = new SpeechSynthesisUtterance(t);
+  u.rate = .95;
+  u.onend = u.onerror = () => { speaking = false; };
+  speaking = true; speakStart = performance.now();
+  speechSynthesis.speak(u);
+}
+function load(i, autoplay){
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  speaking = false;
+  chapter = i; clock = 0; actions = []; loops = []; beats = []; beatI = -1; ended = false; endHold = 0;
+  resetScene();
+  const ch = CH[i]; dur = ch.dur; ch.build();
+  actions.sort((a, b) => a.at - b.at);
+  $('chapNo').textContent = 'Chapter ' + (i + 1) + ' of ' + CH.length;
+  $('chapTitle').textContent = ch.title;
+  capEl.textContent = '';
+  document.querySelectorAll('#chapList button').forEach((b, j) => {
+    if (j === i){ b.setAttribute('aria-current', 'step'); b.classList.add('seen'); } else b.removeAttribute('aria-current');
+  });
+  $('prev').disabled = i === 0;
+  nextBtn.textContent = i === CH.length - 1 ? 'Start over' : 'Next';
+  nextBtn.classList.remove('ready');
+  render();
+  setPlaying(autoplay);
+}
+function setPlaying(v){
+  playing = v;
+  playBtn.textContent = v ? 'Pause' : (ended ? 'Play again' : 'Play');
+  playBtn.setAttribute('aria-pressed', v ? 'true' : 'false');
+}
+function render(){
+  for (const a of actions){
+    if (clock < a.at) break;
+    const k = a.d ? Math.min(1, (clock - a.at) / a.d) : 1;
+    if (k !== a.last){ a.fn(a.d ? ease(k) : 1); a.last = k; }
+  }
+  for (const l of loops) if (clock >= l.t0) l.fn(clock);
+  let bi = -1;
+  for (let j = 0; j < beats.length; j++) if (clock >= beats[j].at) bi = j;
+  if (bi !== beatI){ beatI = bi; if (bi >= 0){ capEl.textContent = beats[bi].text; speak(beats[bi].text); } }
+  prog.style.width = Math.min(100, clock / dur * 100) + '%';
+  fitHud();
+}
+function frame(ts){
+  if (last === null) last = ts;
+  const dt = Math.min(.1, (ts - last) / 1000); last = ts;
+  if (speaking && performance.now() - speakStart > 30000) speaking = false;
+  if (playing && !ended){
+    let target = clock + dt * speed;
+    const nb = beats[beatI + 1];
+    const holding = speaking && $('narrate').checked;
+    if (holding && nb && target >= nb.at) target = Math.max(clock, nb.at - .001);
+    if (holding && !nb && target >= dur) target = Math.max(clock, dur - .001);
+    clock = target;
+    if (clock >= dur){ clock = dur; ended = true; }
+    render();
+  } else if (ended){
+    if (playing && $('auto').checked && chapter < CH.length - 1){
+      endHold += dt;
+      if (endHold > 1.6) load(chapter + 1, true);
+    } else if (playing){
+      setPlaying(false); nextBtn.classList.toggle('ready', chapter < CH.length - 1);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- UI ---------- */
+const list = $('chapList');
+CH.forEach((c, i) => {
+  const li = document.createElement('li');
+  li.innerHTML = '<button><span class="n">' + (i + 1) + '</span><span>' + c.title + '</span></button>';
+  li.firstChild.addEventListener('click', () => load(i, true));
+  list.appendChild(li);
+});
+playBtn.addEventListener('click', () => {
+  if (ended){ load(chapter, true); return; }
+  setPlaying(!playing);
+  if (!playing && 'speechSynthesis' in window) speechSynthesis.pause(); else if ('speechSynthesis' in window) speechSynthesis.resume();
+});
+$('replay').addEventListener('click', () => load(chapter, true));
+$('prev').addEventListener('click', () => { if (chapter > 0) load(chapter - 1, true); });
+nextBtn.addEventListener('click', () => { if (chapter < CH.length - 1) load(chapter + 1, true); else load(0, false); });
+$('narrate').addEventListener('change', e => {
+  if (e.target.checked && beatI >= 0) speak(beats[beatI].text);
+  else if ('speechSynthesis' in window){ speechSynthesis.cancel(); speaking = false; }
+});
+document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => {
+  speed = parseFloat(b.dataset.speed);
+  document.querySelectorAll('[data-speed]').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+}));
+
+/* when playback starts, make sure the whole stage is on screen */
+function showStage(){
+  const r = $('stage').getBoundingClientRect();
+  if (r.top < 0 || r.bottom > innerHeight) $('stage').scrollIntoView({block: r.height > innerHeight ? 'start' : 'nearest', behavior:'smooth'});
+}
+playBtn.addEventListener('click', () => { if (playing) showStage(); });
+document.querySelectorAll('#chapList button').forEach(b => b.addEventListener('click', showStage));
+if ('ResizeObserver' in window) new ResizeObserver(fitText).observe(svg); else addEventListener('resize', fitText);
+fitText();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHud);
+
+/* ---------- full screen ---------- */
+const stageEl = $('stage'), fsBtn = $('fs');
+let expanded = false;
+function setFull(on){
+  expanded = on;
+  const nav = document.querySelector('nav.chapters');
+  if (on) stageEl.appendChild(nav); else stageEl.after(nav);
+  stageEl.classList.toggle('full', on);
+  document.documentElement.classList.toggle('noscroll', on);
+  fsBtn.textContent = on ? 'Exit full screen' : 'Full screen';
+  fsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+}
+fsBtn.addEventListener('click', () => {
+  if (!expanded){
+    setFull(true);
+    try { const p = stageEl.requestFullscreen && stageEl.requestFullscreen(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+  } else {
+    try { if (document.fullscreenElement) { const p = document.exitFullscreen(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
+    setFull(false);
+  }
+});
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && expanded) setFull(false); });
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if (t.closest && t.closest('input,textarea,select')) return;
+  if (e.key === 'Escape' && expanded && !document.fullscreenElement) setFull(false);
+  else if (e.key === 'f' || e.key === 'F') fsBtn.click();
+  else if (e.key === 'ArrowRight') nextBtn.click();
+  else if (e.key === 'ArrowLeft'){ if (!$('prev').disabled) $('prev').click(); }
+  else if (e.key === ' ' && !(t.closest && t.closest('button'))){ e.preventDefault(); playBtn.click(); }
+});
+
+load(0, false);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
