@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unearthing Mars: Orbit Lab</title>
+<meta name="description" content="Interactive models for Kepler's triangulation of Mars, eccentricity, Kepler's laws, launch windows, and seasons on Mars.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+  try { var t = localStorage.getItem('um-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+</head>
+<body>
+<header class="wrap top">
+  <div class="titles">
+    <a class="home" href="../">Science Animations</a>
+    <h1>Unearthing Mars: Orbit Lab</h1>
+  </div>
+  <div class="toggles">
+    <label class="switch"><input type="checkbox" id="guidedToggle"><span class="track"><span class="knob"></span></span><span>Guided mode</span></label>
+    <button class="btn ghost" id="themeToggle" type="button" aria-label="Switch light or dark theme">Dark</button>
+  </div>
+</header>
+
+<nav class="wrap tabs" role="tablist" aria-label="Lab sections">
+  <button role="tab" data-tab="ellipse"><small>Session 1 · Part 1</small>Build the Orbit</button>
+  <button role="tab" data-tab="triangulate"><small>Session 1 · Part 2</small>Triangulate Mars</button>
+  <button role="tab" data-tab="kepler2"><small>Session 2 review</small>Equal Areas &amp; Gravity</button>
+  <button role="tab" data-tab="launch"><small>Session 2 review</small>Launch Window</button>
+  <button role="tab" data-tab="period"><small>Session 2 review</small>Period &amp; Distance</button>
+  <button role="tab" data-tab="seasons"><small>Session 2 review</small>Seasons on Mars</button>
+</nav>
+
+<main class="wrap">
+
+<!-- ============ TAB 1: ELLIPSE ============ -->
+<section class="panel" id="tab-ellipse" role="tabpanel" hidden>
+  <p class="target"><b>Learning target:</b> We are learning how the distance between the foci changes the shape of an orbit so that we can build a model of Mars' orbit and find its perihelion and aphelion.</p>
+  <div class="layout">
+    <div class="card stage">
+      <svg id="ellSvg" viewBox="0 0 640 420" role="img" aria-label="Pins and string ellipse model"></svg>
+      <p class="caption" id="ellCaption">Two pins mark the foci. The Sun sits at one focus. Press <b>Draw it with string</b> to trace the orbit.</p>
+    </div>
+    <aside class="card side">
+      <h3>Set up the board</h3>
+      <div class="presets" id="ellPresets"></div>
+      <label class="slider">Major axis length (L) <output id="ellLOut"></output>
+        <input type="range" id="ellL" min="6" max="14" step="0.1" value="10"></label>
+      <label class="slider">Distance between foci (d) <output id="ellDOut"></output>
+        <input type="range" id="ellD" min="0" max="13" step="0.1" value="0.9"></label>
+      <div class="btnrow">
+        <button class="btn" id="ellDraw" type="button">Draw it with string</button>
+        <label class="check"><input type="checkbox" id="ellCircle"> Compare to a circle</label>
+      </div>
+      <div class="readouts" id="ellRead"></div>
+      <div class="guide">
+        <h4>Key words</h4>
+        <dl class="terms">
+          <dt>Focus (foci)</dt><dd>One of two fixed points inside an ellipse. The Sun is at one focus.</dd>
+          <dt>Major axis</dt><dd>The longest line across the ellipse. It passes through both foci.</dd>
+          <dt>Eccentricity</dt><dd>How stretched out an ellipse is. 0 is a circle. Close to 1 is very flat.</dd>
+          <dt>Perihelion</dt><dd>The point in the orbit closest to the Sun.</dd>
+          <dt>Aphelion</dt><dd>The point in the orbit farthest from the Sun.</dd>
+        </dl>
+        <h4>Solving for d, step by step</h4>
+        <ol class="steps">
+          <li>Start with the formula: e = d ÷ L</li>
+          <li>Multiply both sides by L: e × L = d</li>
+          <li>Plug in your numbers and multiply.</li>
+          <li>Round to the nearest tenth.</li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ TAB 2: TRIANGULATE ============ -->
+<section class="panel" id="tab-triangulate" role="tabpanel" hidden>
+  <p class="target"><b>Learning target:</b> We are learning how Kepler used two sightings of Mars from Earth to locate Mars in its orbit so that we can plot Mars' orbit and calculate its eccentricity.</p>
+  <div class="layout">
+    <div class="card stage">
+      <div class="stagebar">
+        <div class="seg" role="group" aria-label="Mode">
+          <button type="button" data-mode="watch" class="on">Watch it</button>
+          <button type="button" data-mode="try">Your turn</button>
+        </div>
+        <span class="stepno" id="triStepNo"></span>
+      </div>
+      <svg id="triSvg" viewBox="0 0 640 640" role="img" aria-label="Triangulation worksheet with Earth's orbit, the Sun, and plotted Mars positions"></svg>
+      <p class="caption" id="triCaption"></p>
+      <div class="controls">
+        <button class="btn ghost" id="triBack" type="button">Back</button>
+        <button class="btn" id="triNext" type="button">Next step</button>
+        <button class="btn ghost" id="triShow" type="button" hidden>Show me</button>
+        <span class="feedback" id="triFeedback" aria-live="polite"></span>
+      </div>
+    </div>
+    <aside class="card side">
+      <h3>Data table</h3>
+      <p class="small">Two sightings for each Mars position, 687 days apart. Pick a position to plot it.</p>
+      <div class="tablewrap"><table class="data" id="triTable"></table></div>
+      <div class="btnrow">
+        <button class="btn ghost" id="triNew" type="button">New data set</button>
+        <button class="btn ghost" id="triClear" type="button">Clear plots</button>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="triFit" type="button" disabled>Draw the orbit</button>
+        <label class="check"><input type="checkbox" id="triReal"> Show Mars' real orbit</label>
+      </div>
+      <label class="check"><input type="checkbox" id="triLines" checked> Keep sight lines on the board</label>
+      <div class="readouts" id="triResults"></div>
+      <div class="calc">
+        <h4>Percent error check</h4>
+        <div class="calcrow">
+          <label>Your e <input type="number" id="peMeasured" step="0.001" inputmode="decimal" placeholder="0.000"></label>
+          <label>Accepted e <input type="number" id="peAccepted" step="0.001" value="0.094" inputmode="decimal"></label>
+        </div>
+        <p class="calcout" id="peOut">Percent error = |your value − accepted| ÷ accepted × 100</p>
+      </div>
+      <div class="guide">
+        <h4>Two different protractor setups</h4>
+        <ol class="steps">
+          <li><b>Earth's position (heliocentric):</b> protractor centered on the <b>Sun</b>. 0° on Reference Line 1. Count counterclockwise.</li>
+          <li><b>Line of sight to Mars (geocentric):</b> protractor centered on <b>Earth's dot</b>. 0° parallel to the grid lines. Count counterclockwise.</li>
+          <li>Do both dates. Where the two sight lines cross is Mars.</li>
+        </ol>
+        <p class="small">In Guided mode, Your turn shows the angle under your pointer.</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ TAB 3: EQUAL AREAS ============ -->
+<section class="panel" id="tab-kepler2" role="tabpanel" hidden>
+  <p class="target"><b>Learning target:</b> We are learning how Mars' speed and the Sun's pull change around its orbit so that we can explain Kepler's second law using evidence.</p>
+  <div class="layout">
+    <div class="card stage">
+      <svg id="k2Svg" viewBox="0 0 640 460" role="img" aria-label="Mars orbiting the Sun with equal-time slices"></svg>
+      <p class="caption" id="k2Caption">Each slice is the area Mars sweeps out in the same amount of time. Watch how fast Mars moves near the Sun compared to far away.</p>
+      <div class="controls">
+        <button class="btn" id="k2Play" type="button">Pause</button>
+        <button class="btn ghost" id="k2Gravity" type="button">Turn off gravity</button>
+        <label class="check"><input type="checkbox" id="k2Slices" checked> Equal-time slices</label>
+        <label class="check"><input type="checkbox" id="k2Arrows" checked> Arrows</label>
+      </div>
+    </div>
+    <aside class="card side">
+      <h3>Orbit shape</h3>
+      <div class="presets" id="k2Presets">
+        <button type="button" data-e="0.094" class="on">Mars' real orbit</button>
+        <button type="button" data-e="0.5">Stretched (to see it better)</button>
+      </div>
+      <label class="slider">Eccentricity <output id="k2EOut"></output>
+        <input type="range" id="k2E" min="0" max="0.7" step="0.001" value="0.094"></label>
+      <div class="readouts" id="k2Read"></div>
+      <div class="sky">
+        <svg id="k2Sky" viewBox="0 0 220 110" role="img" aria-label="The Sun as seen from Mars"></svg>
+        <p class="small" id="k2SkyText"></p>
+      </div>
+      <div class="tablewrap"><table class="data compact" id="k2Table"></table></div>
+      <div class="guide">
+        <h4>Say it with evidence</h4>
+        <ul class="frames">
+          <li>At perihelion Mars is ____ million km from the Sun, so gravity is ____ and Mars moves ____.</li>
+          <li>Each slice takes the same time, so a short, wide slice means Mars is moving ____.</li>
+          <li>Without gravity, Mars would move in a ____ line because of ____.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ TAB 4: LAUNCH WINDOW ============ -->
+<section class="panel" id="tab-launch" role="tabpanel" hidden>
+  <p class="target"><b>Learning target:</b> We are learning why spacecraft to Mars follow a curved path and launch at certain times so that we can explain how Kepler's laws are used to plan missions.</p>
+  <div class="layout">
+    <div class="card stage">
+      <svg id="lwSvg" viewBox="0 0 640 560" role="img" aria-label="Earth, Mars, and a spacecraft transfer path"></svg>
+      <p class="caption" id="lwCaption"></p>
+      <div class="controls">
+        <button class="btn" id="lwLaunch" type="button">Launch</button>
+        <button class="btn ghost" id="lwNext" type="button">Jump to next launch window</button>
+        <label class="check"><input type="checkbox" id="lwStraight"> Show a straight shot</label>
+      </div>
+    </div>
+    <aside class="card side">
+      <h3>Pick a launch date</h3>
+      <label class="slider">Launch date <output id="lwDateOut"></output>
+        <input type="range" id="lwDate" min="0" max="2555" step="1" value="0"></label>
+      <div class="status" id="lwStatus"></div>
+      <div class="readouts" id="lwRead"></div>
+      <div class="guide">
+        <h4>Things to notice</h4>
+        <ul class="frames">
+          <li>The spacecraft leaves Earth already moving with Earth at about 30 km/s. It just needs a boost to swing out to Mars' orbit.</li>
+          <li>The path is half of an ellipse with the Sun at one focus, so Kepler's laws set the travel time.</li>
+          <li>You aim for where Mars <b>will be</b> when you arrive, not where it is now.</li>
+        </ul>
+      </div>
+      <p class="small">Model uses circular orbits, so dates are close but not exact.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ TAB 5: PERIOD & DISTANCE ============ -->
+<section class="panel" id="tab-period" role="tabpanel" hidden>
+  <p class="target"><b>Learning target:</b> We are learning how an object's distance from what it orbits is related to its period and speed so that we can make claims using numerical evidence.</p>
+  <div class="layout">
+    <div class="card stage">
+      <div class="stagebar">
+        <div class="seg" role="group" aria-label="Graph type">
+          <button type="button" data-view="curve" class="on">Period vs. distance</button>
+          <button type="button" data-view="line">Period² vs. distance³</button>
+        </div>
+        <div class="seg" role="group" aria-label="Zoom">
+          <button type="button" data-zoom="8" class="on">All planets</button>
+          <button type="button" data-zoom="5">To Jupiter</button>
+          <button type="button" data-zoom="4">Inner planets</button>
+        </div>
+      </div>
+      <svg id="pdChart" viewBox="0 0 640 400" role="img" aria-label="Graph of orbital period against distance from the Sun"></svg>
+      <p class="caption" id="pdCaption"></p>
+      <details class="tableview"><summary>Show the data table</summary><div class="tablewrap"><table class="data compact" id="pdTable"></table></div></details>
+    </div>
+    <aside class="card side">
+      <h3>Inner planets in motion</h3>
+      <svg id="pdOrbits" viewBox="0 0 300 300" role="img" aria-label="Mercury, Venus, Earth, and Mars orbiting at their real relative speeds"></svg>
+      <p class="small" id="pdYear"></p>
+      <h3 class="mt">Satellites around Mars</h3>
+      <svg id="pdSats" viewBox="0 0 300 300" role="img" aria-label="Phobos, Deimos, and your satellite orbiting Mars"></svg>
+      <label class="slider">Your satellite's distance from Mars' center <output id="pdSatOut"></output>
+        <input type="range" id="pdSatR" min="4000" max="30000" step="100" value="15000"></label>
+      <div class="tablewrap"><table class="data compact" id="pdSatTable"></table></div>
+      <div class="guide">
+        <h4>Say it with evidence</h4>
+        <ul class="frames">
+          <li>Mars is ____ AU from the Sun and takes ____ years to orbit, while Earth is 1 AU and takes 1 year. So the farther a planet is, the ____ its period.</li>
+          <li>Phobos is closer to Mars than Deimos, so gravity pulls it ____ and it moves ____ (____ km/s vs. ____ km/s).</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ TAB 6: SEASONS ============ -->
+<section class="panel" id="tab-seasons" role="tabpanel" hidden>
+  <p class="target"><b>Learning target:</b> We are learning how axis tilt causes seasons on Earth and Mars so that we can compare the pattern of daylight at the same latitude on both planets.</p>
+  <div class="layout">
+    <div class="card stage">
+      <div class="charthead">
+        <h3>Hours of daylight through one year</h3>
+        <div class="legend" id="seLegend"></div>
+      </div>
+      <svg id="seChart" viewBox="0 0 640 360" role="img" aria-label="Daylight hours over a year on Earth and Mars"></svg>
+      <p class="caption" id="seCaption"></p>
+      <details class="tableview"><summary>Show the data table</summary><div class="tablewrap"><table class="data compact" id="seTable"></table></div></details>
+    </div>
+    <aside class="card side">
+      <h3>Latitude</h3>
+      <div class="presets" id="sePresets">
+        <button type="button" data-lat="68" class="on">68°N</button>
+        <button type="button" data-lat="43">43°N (Buffalo)</button>
+        <button type="button" data-lat="0">Equator</button>
+        <button type="button" data-lat="-68">68°S</button>
+      </div>
+      <label class="slider">Latitude <output id="seLatOut"></output>
+        <input type="range" id="seLat" min="-89" max="89" step="1" value="68"></label>
+      <svg id="seGlobes" viewBox="0 0 300 170" role="img" aria-label="Earth and Mars at northern summer solstice showing axis tilt"></svg>
+      <p class="small">Both planets at the start of northern summer, with sunlight coming from the left. If your latitude line is all on the lit side, the Sun never sets.</p>
+      <div class="readouts" id="seRead"></div>
+      <div class="guide">
+        <h4>Say it with evidence</h4>
+        <ul class="frames">
+          <li>Earth's axis is tilted ____° and Mars' axis is tilted ____°, which are almost the same.</li>
+          <li>Because both are tilted, at 68°N both planets get ____ hours of daylight in summer and ____ in winter.</li>
+          <li>One difference is that a Mars year is ____ Earth days, so each season lasts about ____ as long.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap foot">
+  <p>Practice data on this site are calculated from the real orbits of Earth and Mars. They are not the data or questions from the NYSED investigation.</p>
+</footer>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+
+<script src="js/common.js"></script>
+<script src="js/ellipse.js"></script>
+<script src="js/triangulate.js"></script>
+<script src="js/kepler2.js"></script>
+<script src="js/launch.js"></script>
+<script src="js/period.js"></script>
+<script src="js/seasons.js"></script>
+<script>App.start();</script>
+</body>
+</html>
