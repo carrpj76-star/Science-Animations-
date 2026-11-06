@@ -6,3 +6,4 @@ Mr. Carr's science animations for Earth & Space Science and Environmental Scienc
 | --- | --- | --- |
 | The Carbon Cycle | Earth & Space Science | `carbon-cycle/` |
 | Unearthing Mars: Orbit Lab | Earth & Space Science | `unearthing-mars/` |
+| Oil Spill Clean Up Simulation | Environmental Science | `oil-spill-cleanup/` |

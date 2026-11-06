@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oil Spill Clean Up Simulation</title>
+<style>
+:root{--ink:#1c2631;--muted:#5a6673;--line:#d6dce3;--bg:#eef1f4;--card:#fff;--accent:#1f5f8b;--accent2:#e8f1f7;--warn:#8a5a12}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{background:var(--ink);color:#fff;padding:12px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px}
+header .course{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:#a9b7c6}
+header h1{font-size:20px;margin:0;font-weight:700}
+#dots{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+#dots button{width:28px;height:28px;border-radius:50%;border:1px solid #6d7d8e;background:transparent;color:#cfd8e1;font-size:12px;cursor:pointer;padding:0}
+#dots button.done{background:#3b5368}
+#dots button.on{background:#fff;color:var(--ink);border-color:#fff;font-weight:700}
+main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;padding:16px 20px;max-width:1400px;margin:0 auto}
+.stagewrap{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;align-self:start;position:sticky;top:10px}
+.stagebox{position:relative;width:100%;aspect-ratio:800/460;background:linear-gradient(#f7f9fb,#e3e8ed);border-radius:8px;overflow:hidden}
+#stage{position:absolute;inset:0;width:100%;height:100%}
+#overlay{position:absolute;inset:0;padding:18px;overflow:auto;display:none;background:#f6f8fa}
+.stagebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;min-height:36px}
+.fsbtn{display:inline-flex;align-items:center;gap:6px}
+.fsbtn svg{width:14px;height:14px}
+.fs-only{display:none !important}
+body.fs{overflow:hidden}
+body.fs header{display:none}
+body.fs main{position:fixed;top:0;left:0;right:0;bottom:58px;max-width:none;margin:0;padding:12px 16px;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);grid-template-areas:"stage legend" "stage panel";grid-template-rows:auto minmax(0,1fr)}
+body.fs .stagewrap{position:static;height:100%;min-height:0}
+body.fs .stagebox{flex:1;min-height:0;aspect-ratio:auto}
+body.fs .panel{height:100%;min-height:0;overflow:auto}
+body.fs #legend{max-height:40vh;overflow:auto}
+body.fs nav{position:fixed;left:0;right:0;bottom:0;height:58px;max-width:none;margin:0;padding:0 16px;background:var(--bg);border-top:1px solid var(--line);z-index:5}
+body.fs .fs-only{display:inline-flex !important}
+body.fs .fs-only.gone{display:none !important}
+@media (orientation:portrait),(max-width:700px){
+  body.fs main{grid-template-columns:minmax(0,1fr);grid-template-areas:"stage" "legend" "panel";grid-template-rows:minmax(0,1.3fr) auto minmax(0,1fr);gap:10px}
+  body.fs #legend{max-height:18vh}
+}
+#cap{color:var(--muted);font-size:14px;flex:1}
+button.btn{font:inherit;font-size:14px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:7px 14px;border-radius:6px;cursor:pointer}
+button.btn:hover{border-color:#9aa7b4}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#184d72}
+button.primary:disabled{background:#a3b8c8;border-color:#a3b8c8;cursor:default}
+button.btn:disabled{opacity:.5;cursor:default}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.tag{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.panel h2{margin:2px 0 12px;font-size:22px;line-height:1.2}
+.box{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:0 0 12px}
+.box h3{margin:0 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.box p{margin:0 0 6px}
+.box p:last-child{margin-bottom:0}
+.box ol,.box ul{margin:0;padding-left:20px}
+.box li{margin:0 0 4px}
+.box.do{border-left:4px solid var(--accent)}
+.box.ask{border-left:4px solid var(--warn)}
+.qs{list-style:none;margin:0;padding:0 !important}
+.qs li{margin:0 0 10px;padding-left:38px;text-indent:-38px}
+.qn{display:inline-block;min-width:38px;text-indent:0;font-weight:700;color:var(--warn)}
+.starter{font:inherit;font-size:12px;border:none;background:none;color:var(--accent);text-decoration:underline;cursor:pointer;padding:0 0 0 6px}
+.st{display:none;margin:4px 0 0;padding:6px 10px;background:#fbf6ec;border-radius:6px;font-style:italic;text-indent:0}
+.st.show{display:block}
+.vocab{font-size:14px;color:var(--muted);margin:0 0 12px;border-top:1px solid var(--line);padding-top:10px}
+.vocab b{color:var(--ink)}
+.result{border:1px solid #b9d3e4;background:var(--accent2);border-radius:8px;padding:10px 12px;margin-top:12px}
+.result h3{margin:0 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.result p{margin:0 0 8px}
+.result p:last-child{margin-bottom:0}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.target{background:#f3f6f9;border-radius:8px;padding:10px 12px;margin:0 0 12px}
+.cols{columns:2;margin:0;padding-left:20px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:0 20px 20px;max-width:1400px;margin:0 auto}
+#count{color:var(--muted);font-size:14px}
+svg text.lbl{font:600 13px system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;fill:#1c2631;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+.ov{display:flex;flex-direction:column;gap:12px;height:100%}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;flex:1}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}
+.card .big{font-size:48px;font-weight:700;color:#c3ccd5;line-height:1}
+.card h4{margin:0 0 6px;font-size:18px}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.card.show{border-color:#b9d3e4;background:#f8fbfd}
+.ovnote{font-size:14px;color:var(--muted);margin:0}
+table.cmp{width:100%;border-collapse:collapse;background:#fff;font-size:14px}
+table.cmp th,table.cmp td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+table.cmp th{background:#eef2f5}
+@media (max-width:900px){main{grid-template-columns:1fr;grid-template-areas:"stage" "legend" "panel";grid-template-rows:auto}.stagewrap{position:static}#dots{margin-left:0}.cards{grid-template-columns:1fr}}
+.stagebox.narrow{aspect-ratio:540/430}
+.stagebox.ov-on{aspect-ratio:auto}
+.stagebox.ov-on #overlay{position:relative;inset:auto}
+#legend{grid-area:legend;display:none;list-style:none;margin:0;padding:10px 12px 4px;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+@media (min-width:901px){main{grid-template-areas:"stage panel" "legend panel";grid-template-rows:auto 1fr}}
+.stagewrap{grid-area:stage}
+.panel{grid-area:panel;align-self:start}
+main:has(#legend.on) .stagewrap{position:static}
+#legend.on{display:block}
+#legend li{display:flex;gap:8px;align-items:flex-start;margin:0 0 6px}
+#legend .n{flex:none;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+#legend svg{width:100%;max-width:240px;height:auto;display:block}
+@media (max-width:600px){
+  header{padding:10px 16px}
+  header h1{font-size:18px}
+  #dots{width:100%;gap:4px}
+  #dots button{width:26px;height:26px;font-size:11px}
+  main{padding:12px 16px;gap:12px}
+  .stagewrap{padding:8px}
+  .panel{padding:14px}
+  .panel h2{font-size:20px}
+  #overlay{padding:12px}
+  .cards{gap:8px}
+  .card{padding:10px}
+  .card h4{font-size:16px}
+  table.cmp{font-size:13px}
+  table.cmp th,table.cmp td{padding:6px}
+  .starter{padding:6px 0 6px 6px}
+  nav{position:sticky;bottom:0;z-index:5;background:var(--bg);padding:10px 16px;border-top:1px solid var(--line)}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="course">Environmental Science · Lab 3.2</div>
+    <h1>Oil Spill Clean Up Simulation</h1>
+  </div>
+  <div id="dots" aria-label="Steps"></div>
+</header>
+
+<main>
+  <section class="stagewrap">
+    <div class="stagebox">
+      <svg id="stage" viewBox="0 0 800 460" role="img" aria-label="Lab animation">
+        <defs>
+          <linearGradient id="wG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#a7d3ea"/><stop offset="1" stop-color="#5a9ec4"/>
+          </linearGradient>
+          <filter id="goo" filterUnits="userSpaceOnUse" x="0" y="0" width="800" height="460">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4"/>
+            <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"/>
+          </filter>
+          <clipPath id="surfClip"><ellipse cx="400" cy="200" rx="255" ry="60"/></clipPath>
+          <clipPath id="bodyClip"><path d="M145,200 L170,380 A230,52 0 0,0 630,380 L655,200 Z"/></clipPath>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#1c2631"/>
+          </marker>
+        </defs>
+        <ellipse cx="400" cy="386" rx="240" ry="54" fill="#000" opacity=".06"/>
+        <ellipse cx="400" cy="170" rx="260" ry="62" fill="none" stroke="#8fa1b1" stroke-width="2"/>
+        <path d="M145,200 L170,380 A230,52 0 0,0 630,380 L655,200 A255,60 0 0,1 145,200 Z" fill="url(#wG)" opacity=".85"/>
+        <g id="gCol" clip-path="url(#bodyClip)"></g>
+        <ellipse cx="400" cy="200" rx="255" ry="60" fill="#c4e4f4" opacity=".92"/>
+        <g clip-path="url(#surfClip)">
+          <g id="gSheen"></g>
+          <g id="gOil" filter="url(#goo)" opacity=".94"></g>
+          <g id="gDrops"></g>
+        </g>
+        <g id="gFx"></g>
+        <g fill="none" stroke="#8fa1b1" stroke-width="2">
+          <path d="M140,170 L170,380 A230,52 0 0,0 630,380 L660,170"/>
+          <path d="M140,170 A260,62 0 0,0 660,170" stroke-width="2.5"/>
+        </g>
+        <path d="M162,196 L182,356" stroke="#fff" stroke-width="5" opacity=".35" stroke-linecap="round"/>
+        <g id="gTools"></g>
+        <g id="gLabels"></g>
+        <g id="gNotes"></g>
+      </svg>
+      <div id="overlay"></div>
+    </div>
+    <div class="stagebar">
+      <span id="cap"></span>
+      <button class="btn primary fs-only" id="fsRev" type="button">Reveal</button>
+      <button class="btn" id="replay" type="button">Replay step</button>
+      <button class="btn fsbtn" id="fsBtn" type="button" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.5v-4h4M10.5 1.5h4v4M14.5 10.5v4h-4M5.5 14.5h-4v-4"/></svg><span>Full screen</span></button>
+    </div>
+  </section>
+
+  <ol id="legend"></ol>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<nav>
+  <button class="btn" id="prev" type="button">&larr; Back</button>
+  <span id="count"></span>
+  <button class="btn primary" id="next" type="button">Next &rarr;</button>
+</nav>
+
+<script>
+/* ---------- basics ---------- */
+const NS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id);
+const L={col:$('gCol'),sheen:$('gSheen'),oil:$('gOil'),drops:$('gDrops'),fx:$('gFx'),tools:$('gTools'),labels:$('gLabels'),notes:$('gNotes')};
+const box=document.querySelector('.stagebox');
+let notes=[],mode=false;
+const isNarrow=()=>{const w=box.clientWidth,h=box.clientHeight;return Math.min(w,h?h*800/460:w)<560;};
+let runId=0,cur=0,blobs=[],drops=[];
+const seen=new Set();
+const CX=400,CY=200,SU=235,SV=55;
+const sx=u=>CX+u*SU, sy=v=>CY+v*SV;
+
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;}
+function txt(p,x,y,s,size,weight,fill,anchor){const t=el('text',{x,y,'font-size':size||12,'font-weight':weight||600,fill:fill||'#1c2631','text-anchor':anchor||'start','font-family':'system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif'},p);t.textContent=s;return t;}
+function rng(seed){let s=seed%2147483647;if(s<=0)s+=2147483646;return()=>(s=s*16807%2147483647)/2147483647;}
+
+/* ---------- animation timing ---------- */
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const lin=t=>t;
+const easeOut=t=>1-Math.pow(1-t,3);
+function tween(ms,fn,e){e=e||ease;const id=runId;return new Promise(res=>{const t0=performance.now();function f(now){if(id!==runId)return;const t=Math.min(1,(now-t0)/ms);fn(e(t));if(t<1)requestAnimationFrame(f);else res();}requestAnimationFrame(f);});}
+const wait=ms=>tween(ms,()=>{},lin);
+function fade(e,to,ms){const a=e.getAttribute('opacity');const from=a===null?1:+a;return tween(ms||500,k=>e.setAttribute('opacity',from+(to-from)*k));}
+
+/* ---------- poses for tools ---------- */
+function setPose(g,p){g._p=Object.assign({x:0,y:0,r:0,sx:1,sy:1},g._p||{},p||{});const q=g._p;g.setAttribute('transform',`translate(${q.x} ${q.y}) rotate(${q.r}) scale(${q.sx} ${q.sy})`);}
+function poseTo(g,ms,p,e){const a=Object.assign({},g._p);return tween(ms,k=>{const n={};for(const key in p)n[key]=a[key]+(p[key]-a[key])*k;setPose(g,n);},e);}
+
+/* ---------- oil on the surface ---------- */
+function drawB(b){b.e.setAttribute('cx',sx(b.u));b.e.setAttribute('cy',sy(b.v));b.e.setAttribute('rx',Math.max(0,b.r*SU));b.e.setAttribute('ry',Math.max(0,b.r*SV));}
+function addB(u,v,r,layer,list){const b={u,v,r,e:el('ellipse',{fill:'#24170a'},layer)};drawB(b);list.push(b);return b;}
+const blob=(u,v,r)=>addB(u,v,r,L.oil,blobs);
+const drop=(u,v,r)=>addB(u,v,r,L.drops,drops);
+function moveAll(ms,T,e){const s=T.map(t=>({u:t.b.u,v:t.b.v,r:t.b.r}));return tween(ms,k=>{T.forEach((t,i)=>{const a=s[i];if(t.u!==undefined)t.b.u=a.u+(t.u-a.u)*k;if(t.v!==undefined)t.b.v=a.v+(t.v-a.v)*k;if(t.r!==undefined)t.b.r=a.r+(t.r-a.r)*k;drawB(t.b);});},e);}
+function clampIn(u,v,max){max=max||.9;const d=Math.hypot(u,v);if(d>max){u*=max/d;v*=max/d;}return[u,v];}
+function slick(seed,cu,cv,spread,n,rmin,rmax){const R=rng(seed);blob(cu,cv,rmax);for(let i=0;i<n;i++){const a=R()*6.283,d=Math.sqrt(R())*spread;blob(cu+Math.cos(a)*d,cv+Math.sin(a)*d,rmin+R()*(rmax-rmin));}}
+
+/* ---------- effects and labels ---------- */
+function ripple(x,y,m){m=m||45;const e=el('ellipse',{cx:x,cy:y,fill:'none',stroke:'#fff','stroke-width':2},L.fx);return tween(900,k=>{const r=4+k*m;e.setAttribute('rx',r);e.setAttribute('ry',r*.235);e.setAttribute('opacity',1-k);},lin).then(()=>e.remove());}
+function cap(t){$('cap').textContent=t;}
+function label(x,y,t,lx,ly,anchor){const a={x,y,t,lx,ly,anchor};notes.push(a);return drawNote(a,notes.length,true);}
+function addLegend(n,html){
+  const li=document.createElement('li');
+  li.innerHTML=(n?`<span class="n">${n}</span>`:'')+'<span></span>';
+  li.lastChild.innerHTML=html;$('legend').appendChild(li);$('legend').classList.add('on');
+}
+function drawNote(a,n,animate){
+  if(a.inset)return drawInset(animate);
+  const {x,y,t,lx,ly,anchor}=a;
+  const g=el('g',{opacity:animate?0:1},L.notes);
+  if(mode){
+    const px=lx!==undefined?lx:x, py=lx!==undefined?ly:y;
+    const by=Math.max(48,py-26);
+    if(lx!==undefined){el('line',{x1:px,y1:py,x2:px,y2:by,stroke:'#1c2631','stroke-width':1.5},g);el('circle',{cx:px,cy:py,r:3,fill:'#1c2631'},g);}
+    el('circle',{cx:px,cy:by,r:14,fill:'#1f5f8b',stroke:'#fff','stroke-width':3},g);
+    txt(g,px,by+6,String(n),18,700,'#fff','middle');
+    const sp=document.createElement('span');sp.textContent=t;addLegend(n,sp.innerHTML);
+  }else{
+    if(lx!==undefined){
+      let s0;
+      if(anchor==='middle')s0=[x,ly<y?y-15:y+5];
+      else if(anchor==='end')s0=[x+4,y-4];
+      else s0=[x-4,y-4];
+      el('line',{x1:s0[0],y1:s0[1],x2:lx,y2:ly,stroke:'#1c2631','stroke-width':1.2},g);
+      el('circle',{cx:lx,cy:ly,r:2.5,fill:'#1c2631'},g);
+    }
+    const t2=el('text',{x,y,class:'lbl','text-anchor':anchor||'start'},g);t2.textContent=t;
+  }
+  if(animate)fade(g,1,500);
+  return g;
+}
+async function drips(x,y,cols){for(const c of cols){const x0=x+(Math.random()-.5)*30;const d=el('ellipse',{cx:x0,cy:y,rx:3,ry:4.5,fill:c},L.tools);await tween(500,k=>d.setAttribute('cy',y+(200-y)*k),t=>t*t);d.remove();ripple(x0,200,20);}}
+function puff(){const p=el('path',{d:'M0,-12 Q9,0 0,12',fill:'none',stroke:'#5b6775','stroke-width':2,'stroke-linecap':'round'},L.fx);return tween(900,k=>{p.setAttribute('transform',`translate(${212+150*k} ${186+8*k})`);p.setAttribute('opacity',1-k);},lin).then(()=>p.remove());}
+
+/* ---------- tools ---------- */
+function fw(y){return(y<30||y>170)?0:24*Math.pow(Math.sin(Math.PI*(y-30)/142),.8);}
+function feather(oily){
+  const g=el('g',{},L.tools);
+  if(!oily){
+    el('path',{d:'M0,30 C-28,55 -30,115 -5,168 L0,174 L5,168 C30,115 28,55 0,30 Z',fill:'#f3f0e8',stroke:'#b8b0a0','stroke-width':1.2},g);
+    for(let y=40;y<164;y+=6){const w=fw(y)*.9;el('path',{d:`M0,${y} Q${-w*.5},${y+3} ${-w},${y+9} M0,${y} Q${w*.5},${y+3} ${w},${y+9}`,fill:'none',stroke:'#d2cab9','stroke-width':.8},g);}
+  }else{
+    const pts=[];for(let i=0,y=36;y<=164;i++,y+=8)pts.push([y,fw(y)*(i%2?.35:1.05)]);
+    let d='M0,30';pts.forEach(([y,w])=>{d+=` L${(-w).toFixed(1)},${y}`;});d+=' L0,176';
+    pts.slice().reverse().forEach(([y,w],i)=>{d+=` L${(w*(i%2?1:.5)).toFixed(1)},${y+3}`;});d+=' Z';
+    el('path',{d,fill:'#3a2814',stroke:'#1a1108','stroke-width':1.2,'stroke-linejoin':'round'},g);
+    for(let y=44;y<160;y+=16)el('path',{d:`M0,${y} L${(-fw(y)*.7).toFixed(1)},${y+12} M0,${y+6} L${(fw(y)*.6).toFixed(1)},${y+16}`,stroke:'#1a1108','stroke-width':1.4,fill:'none'},g);
+    el('ellipse',{cx:-6,cy:178,rx:3,ry:5,fill:'#24170a'},g);
+    el('ellipse',{cx:7,cy:172,rx:2.5,ry:4,fill:'#24170a'},g);
+  }
+  el('path',{d:'M0,0 L0,174',stroke:oily?'#24170a':'#8b806d','stroke-width':2.4,'stroke-linecap':'round',fill:'none'},g);
+  return g;
+}
+function cupG(withOil){
+  const g=el('g',{},L.tools);
+  el('path',{d:'M0,0 L60,0 L52,86 L8,86 Z',fill:'rgba(255,255,255,.6)'},g);
+  if(withOil)g.liq=el('path',{d:'M3,34 L57,34 L52,84 L8,84 Z',fill:'#24170a'},g);
+  g.outline=el('path',{d:'M0,0 L60,0 L52,86 L8,86 Z',fill:'none',stroke:'#6b7a86','stroke-width':2,'stroke-linejoin':'round'},g);
+  return g;
+}
+function straw(){const g=el('g',{},L.tools);el('rect',{x:-190,y:-4,width:190,height:8,rx:3,fill:'#eef2f5',stroke:'#7f8f9c','stroke-width':1.5},g);for(let x=-180;x<-10;x+=22)el('line',{x1:x,y1:-3,x2:x+8,y2:3,stroke:'#b9c6d1','stroke-width':3},g);return g;}
+function sponge(){
+  const g=el('g',{},L.tools);
+  el('rect',{x:-50,y:-40,width:100,height:40,rx:6,fill:'#e3c450',stroke:'#a4871f','stroke-width':1.5},g);
+  const R=rng(7);for(let i=0;i<22;i++)el('ellipse',{cx:-44+R()*88,cy:-35+R()*30,rx:1.5+R()*2.5,ry:1+R()*1.5,fill:'#c6a632'},g);
+  g.stain=el('path',{d:'M-50,-20 Q-32,-27 -12,-19 Q8,-12 28,-23 Q42,-28 50,-19 L50,-6 Q50,0 44,0 L-44,0 Q-50,0 -50,-6 Z',fill:'#2a1b0c',opacity:0},g);
+  return g;
+}
+function rag(){
+  const g=el('g',{},L.tools);
+  el('path',{d:'M-62,-34 Q-40,-42 -18,-33 Q2,-26 22,-36 Q44,-44 62,-31 L58,0 Q30,7 0,1 Q-30,-5 -58,1 Z',fill:'#c9d2da',stroke:'#8796a3','stroke-width':1.5},g);
+  for(let x=-46;x<56;x+=16)el('line',{x1:x,y1:-32,x2:x-2,y2:-3,stroke:'#b3bec8','stroke-width':1},g);
+  g.stain=el('g',{opacity:0},g);
+  [[-30,-10,16,8],[6,-7,20,7],[36,-14,12,7],[-8,-22,10,5]].forEach(([cx,cy,rx,ry])=>el('ellipse',{cx,cy,rx,ry,fill:'#2a1b0c'},g.stain));
+  return g;
+}
+const DROP_D='M-2,0 L2,0 L5,-28 L7,-36 L7,-118 L-7,-118 L-7,-36 L-5,-28 Z';
+function dropper(){
+  const g=el('g',{},L.tools);const id='dc'+runId;
+  const cp=el('clipPath',{id},g);el('path',{d:DROP_D},cp);
+  el('path',{d:DROP_D,fill:'rgba(255,255,255,.5)'},g);
+  g.water=el('rect',{x:-8,y:0,width:16,height:0,fill:'#6fb0d6','clip-path':`url(#${id})`},g);
+  g.oil=el('rect',{x:-8,y:0,width:16,height:0,fill:'#24170a','clip-path':`url(#${id})`},g);
+  el('path',{d:DROP_D,fill:'none',stroke:'#6b7a86','stroke-width':1.5},g);
+  g.bulb=el('g',{transform:'translate(0 -118)'},g);g.bs=1;
+  el('rect',{x:-11,y:-44,width:22,height:46,rx:10,fill:'#3d4349'},g.bulb);
+  return g;
+}
+function squeeze(D,to,ms){const a=D.bs;return tween(ms,k=>{D.bs=a+(to-a)*k;D.bulb.setAttribute('transform',`translate(0 -118) scale(${D.bs} 1)`);});}
+function bottle(){
+  const g=el('g',{},L.tools);
+  el('path',{d:'M-4,0 L4,0 L7,-16 L-7,-16 Z',fill:'#e6e9ec',stroke:'#7f8f9c','stroke-width':1.2},g);
+  el('rect',{x:-26,y:-98,width:52,height:84,rx:12,fill:'#5d8f6d',stroke:'#3d6a4d','stroke-width':1.5},g);
+  el('rect',{x:-18,y:-74,width:36,height:32,rx:3,fill:'#f4f6f3'},g);
+  txt(g,0,-60,'DISH',9,700,'#3d6a4d','middle');txt(g,0,-49,'SOAP',9,700,'#3d6a4d','middle');
+  return g;
+}
+function spoon(){const g=el('g',{},L.tools);el('path',{d:'M0,-22 L0,-170',stroke:'#aeb6bd','stroke-width':6,'stroke-linecap':'round'},g);el('ellipse',{cx:0,cy:0,rx:15,ry:23,fill:'#cfd4d8',stroke:'#7d858c','stroke-width':1.5},g);return g;}
+function hand(){const g=el('g',{opacity:0},L.tools);el('rect',{x:-8,y:-30,width:16,height:26,rx:7,fill:'#c49a7c',stroke:'#8d6a52','stroke-width':1.2},g);setPose(g,{});return g;}
+const INSET=`<rect x="16" y="16" width="200" height="142" rx="8" fill="#fff" stroke="#c9d1d9"/>
+<text x="28" y="36" font-size="12" font-weight="700" fill="#1c2631" font-family="system-ui,sans-serif">Side view, zoomed in</text>
+<rect x="28" y="71" width="176" height="55" fill="#7fb8d8"/>
+<rect x="28" y="62" width="176" height="9" fill="#24170a"/>
+<rect x="28" y="126" width="176" height="7" fill="#24170a"/>
+<text x="30" y="57" font-size="11" font-weight="600" fill="#1c2631" font-family="system-ui,sans-serif">light oil (less dense) floats</text>
+<text x="36" y="102" font-size="11" font-weight="600" fill="#fff" font-family="system-ui,sans-serif">water</text>
+<text x="30" y="149" font-size="11" font-weight="600" fill="#1c2631" font-family="system-ui,sans-serif">heavy crude (more dense) sinks</text>`;
+function inset(){const a={inset:true};notes.push(a);return drawNote(a,0,true);}
+function drawInset(animate){
+  if(mode){addLegend(0,`<svg viewBox="16 16 200 142" xmlns="${NS}">${INSET}</svg>`);return Promise.resolve();}
+  const g=el('g',{opacity:animate?0:1},L.notes);g.innerHTML=INSET;
+  return animate?fade(g,1,600):Promise.resolve();
+}
+
+/* ---------- overlays ---------- */
+function showOverlay(h){const o=$('overlay');o.innerHTML=h;o.style.display='block';$('stage').style.visibility='hidden';if(mode)box.classList.add('ov-on');}
+function hideOverlay(){$('overlay').style.display='none';$('overlay').innerHTML='';$('stage').style.visibility='visible';box.classList.remove('ov-on');}
+function oilCards(show){
+  const c=show?[
+    ['Fuel','Gasoline and diesel for cars, buses, and trucks. Jet fuel for planes.'],
+    ['Heat and power','Heating oil for homes and buildings. Some power plants burn oil.'],
+    ['Products','Plastics, motor oil and lubricants, asphalt, and synthetic fabrics.']
+  ]:[['?','Use #1'],['?','Use #2'],['?','Use #3']];
+  return `<div class="ov"><div class="cards">${c.map(x=>show?`<div class="card show"><h4>${x[0]}</h4><p>${x[1]}</p></div>`:`<div class="card"><div class="big">${x[0]}</div><p>${x[1]}</p></div>`).join('')}</div>`+
+  `<p class="ovnote">${show?'Most of this oil gets moved to us by tanker, barge, pipeline, or truck. That transport is where most big spills happen.':'Think about your day so far. Where did oil (or something made from it) show up?'}</p></div>`;
+}
+const CMP=`<div class="ov"><table class="cmp">
+<tr><th>Method (lab tool)</th><th>What it does</th><th>The catch</th></tr>
+<tr><td><b>Boom</b> (string)</td><td>Holds oil in one area</td><td>Fails in waves, wind, and currents. Doesn't remove anything.</td></tr>
+<tr><td><b>Scooping</b> (cup)</td><td>Grabs at the oil</td><td>Gets mostly water and pushes the slick out wider.</td></tr>
+<tr><td><b>Sorbents</b> (sponge, rag)</td><td>Soak up oil</td><td>Fill up fast, grab water too, and become oily waste.</td></tr>
+<tr><td><b>Skimming</b> (eyedropper)</td><td>Pulls oil off the surface</td><td>Picks up lots of water. Slow, gets a small part of a big spill.</td></tr>
+<tr><td><b>Dispersant</b> (detergent)</td><td>Breaks oil into tiny droplets</td><td>Moves the oil underwater. The chemicals can be toxic too.</td></tr>
+</table><p class="ovnote">Every method fixed one problem and caused another. That tradeoff is the big idea of this lab.</p></div>`;
+
+/* ---------- body of water helpers ---------- */
+function frontTop(x){const q=(x-400)/255;return 200+60*Math.sqrt(Math.max(0,1-q*q));}
+function frontBot(x){const q=(x-400)/230;return 380+52*Math.sqrt(Math.max(0,1-q*q));}
+
+/* ---------- the steps ---------- */
+const S=[
+{ // 0
+  tag:'Lab 3.2 · Start here', title:'Oil Spill Clean Up Simulation',
+  pre:`<div class="target"><b>Learning target:</b> We are learning how oil behaves when it spills into water and how different cleanup methods work so that we can explain why oil spills are so hard to clean up.</div>
+  <div class="box do"><h3>How to use this</h3><ol>
+  <li>Have your lab packet out. Read the <b>Introduction</b> box on page 1 first.</li>
+  <li>Each step here matches a section of your packet. The question numbers match too.</li>
+  <li>Watch the step. Jot a quick prediction in the margin.</li>
+  <li>Hit <b>Reveal what happened</b>, then write your answer on your sheet.</li></ol></div>
+  <div class="box"><h3>Materials (what the class used)</h3><ul class="cols">
+  <li>Clear container (the "ocean")</li><li>"Crude oil"</li><li>Two feathers</li><li>Eyedropper</li><li>Rag</li><li>Sponge</li><li>String</li><li>Dish detergent</li><li>Straw</li><li>Spoon</li><li>Cup</li></ul></div>`,
+  scene(){label(400,452,'Clear container = your "ocean"',undefined,undefined,'middle');}
+},
+{ // 1
+  tag:'Before you begin', title:'How do we use oil?',
+  doText:'Think about everything you did today. Where does oil, or something made from oil, show up?',
+  qs:[['1-3','Name three different ways we use oil.','We use oil for...']],
+  revLabel:'Show examples',
+  result:`<p>Any three of these work. If you thought of something else, check that it really uses oil.</p>`,
+  scene(){showOverlay(oilCards(false));},
+  async reveal(){showOverlay(oilCards(true));}
+},
+{ // 2
+  tag:'Activity 1 · Clean water', title:'A clean feather',
+  doText:'Take one feather and dip it into your "ocean." Pull it back out and look at it.',
+  qs:[['1a','Does the feather float?'],['1b',"Why do you think birds' feathers repel water?","Birds' feathers repel water because..."]],
+  vocab:[['repel','to push away. Water beads up and rolls off instead of soaking in.']],
+  result:`<p><b>1a:</b> Yes. The clean feather floats, and water beads up and rolls right off.</p>
+  <p><b>1b:</b> The tiny branches on a feather (barbs) hook together into a tight mesh that traps air. Birds also spread a waxy oil from a gland near their tail over their feathers when they preen. That keeps water out, keeps the bird warm, and helps it float.</p>`,
+  scene(){this.F=feather(false);setPose(this.F,{x:400,y:-200});},
+  async play(){const F=this.F;cap('Lowering the clean feather into the water');await poseTo(F,1200,{y:28});ripple(400,200);await poseTo(F,700,{y:56});await wait(500);cap('Lifting it back out');await poseTo(F,1000,{y:-35});cap('Your turn: answer 1a and 1b, then hit Reveal');},
+  async reveal(){
+    const F=this.F;setPose(F,{x:400,y:-35,r:0});cap('Watch the water on the feather');
+    const beads=[[393,72],[408,96],[398,118]].map(([x,y])=>el('circle',{cx:x,cy:y,r:4.5,fill:'#e9f7ff',stroke:'#5f9fc4','stroke-width':1.2,opacity:0},L.tools));
+    await Promise.all(beads.map(b=>fade(b,1,400)));
+    label(470,96,'water beads up',414,96);
+    for(const b of beads){const x0=+b.getAttribute('cx'),y0=+b.getAttribute('cy');await tween(500,k=>{b.setAttribute('cx',x0+(400-x0)*k);b.setAttribute('cy',y0+(141-y0)*k);});await tween(450,k=>b.setAttribute('cy',141+59*k),t=>t*t);b.remove();ripple(400,200,25);}
+    cap('Setting the feather on the surface');
+    await poseTo(F,1300,{x:487,y:197,r:90});ripple(400,200,70);
+    label(400,300,'floats on top of the water',400,218,'middle');cap('');
+  }
+},
+{ // 3
+  tag:'Activity 2 · Steps 1 and 2', title:'What happens to oil in water?',
+  doText:'Pour your "crude oil" into the water to make a spill. Watch what it does.',
+  qs:[['2a','What happened when the oil hit the water?','When the oil hit the water, it...'],['2b','Why does the oil stay on top of the water?','The oil stays on top because oil is ___ dense than water, so...']],
+  vocab:[['density','how much mass is packed into a space. Less dense stuff floats on more dense stuff.']],
+  result:`<p><b>2a:</b> The oil didn't mix in. Most of it stayed on the surface and spread into a thin layer called a <b>slick</b>. Some of the heavier oil sank to the bottom.</p>
+  <p><b>2b:</b> Most of the oil is less dense than water, so it floats. Oil and water also don't mix because their molecules aren't attracted to each other.</p>
+  <p>Crude oil is a mix of light and heavy stuff. The light parts are less dense than water and float. Some of the heavy parts are more dense than water and sink. That's why a spill can hurt the surface <i>and</i> the bottom of the ocean ecosystem for a long time.</p>`,
+  scene(){this.C=cupG(true);setPose(this.C,{x:470,y:60});},
+  async play(){
+    const C=this.C;cap('Pouring the "crude oil" into the ocean');
+    await poseTo(C,900,{r:-105});
+    const st=el('path',{d:'M470,64 Q462,130 452,200',stroke:'#24170a','stroke-width':7,'stroke-linecap':'round',fill:'none'},L.tools);
+    L.tools.insertBefore(st,C);
+    const len=st.getTotalLength();st.setAttribute('stroke-dasharray',len);st.setAttribute('stroke-dashoffset',len);
+    await tween(450,k=>st.setAttribute('stroke-dashoffset',len*(1-k)),lin);
+    const b=blob(.22,0,0);ripple(452,200,40);
+    await tween(1800,k=>{b.r=.11*k;drawB(b);C.liq.setAttribute('opacity',1-k);});
+    await tween(350,k=>st.setAttribute('stroke-dashoffset',-len*k),lin);st.remove();
+    await poseTo(C,800,{r:0});await fade(C,0,500);
+    cap('Your turn: answer 2a and 2b, then hit Reveal');
+  },
+  async reveal(){
+    cap('Watch the oil');setPose(this.C,{r:0});this.C.setAttribute('opacity',0);
+    if(!blobs.length)blob(.22,0,.11);
+    const R=rng(33);const T=blobs.map(b=>({b,u:.06,v:0,r:.12}));
+    for(let i=0;i<9;i++){const a=R()*6.283,d=.1+Math.sqrt(R())*.3;const nb=blob(.2,0,.03);T.push({b:nb,u:.06+Math.cos(a)*d,v:Math.sin(a)*d,r:.07+R()*.06});}
+    await moveAll(2400,T);
+    label(610,112,'most of it floats in a thin layer',490,196);
+    await wait(500);cap('Now watch the bottom');
+    const patch=el('ellipse',{cx:425,cy:408,rx:0,ry:0,fill:'#24170a',opacity:.9},L.col);
+    const sinks=[];
+    [[395,0],[452,350],[420,700],[470,1050],[380,1400],[440,1750]].forEach(([x,delay],i)=>{
+      sinks.push(wait(delay+1).then(()=>{
+        const d=el('ellipse',{cx:x,cy:215,rx:6,ry:4.5,fill:'#24170a'},L.col);
+        const xEnd=425+(x-425)*.6,yEnd=404+(i%3)*3;
+        return tween(2600,k=>{d.setAttribute('cx',x+(xEnd-x)*k+4*Math.sin(k*9+i));d.setAttribute('cy',215+(yEnd-215)*k);},lin).then(()=>{
+          d.remove();const p=(i+1)/6;patch.setAttribute('rx',75*p);patch.setAttribute('ry',10*Math.sqrt(p));
+        });
+      }));
+    });
+    await Promise.all(sinks);
+    label(400,452,'heavier parts of the crude sink to the bottom',425,418,'middle');
+    await inset();cap('');
+  }
+},
+{ // 4
+  tag:'Activity 2 · Step 3', title:'Moving the oil',
+  doText:'Use your straw to blow the oil around the surface of the water.',
+  qs:[['3a','What did you observe when you blew the oil around the surface?','When I blew on the oil, it...']],
+  vocab:[['current','water moving in one direction, like a river in the ocean.']],
+  result:`<p>The oil slid across the water away from the straw, broke into pieces, and spread out over a much bigger area. Since oil sits on top of the water, wind pushes it along.</p>
+  <p>Add currents and tides, and a real spill can travel a long way from where it started.</p>`,
+  scene(){slick(11,-.15,0,.18,7,.07,.13);this.S=straw();setPose(this.S,{x:-10,y:182,r:10});},
+  async play(){cap('Blowing across the oil with the straw');await poseTo(this.S,900,{x:205});const p=[];for(let i=0;i<4;i++){await wait(i?220:1);p.push(puff());}await Promise.all(p);cap('Your turn: answer 3a, then hit Reveal');},
+  async reveal(){
+    setPose(this.S,{x:205});cap('Watch the oil');const R=rng(44);
+    const T=blobs.map(b=>{const [u,v]=clampIn(b.u+.4+R()*.5,b.v*3+(R()-.5)*.9,.9);return{b,u,v,r:b.r*.7};});
+    for(let i=0;i<24;i++){const nb=blob(-.15+(R()-.5)*.2,(R()-.5)*.2,.02);const [u,v]=clampIn(-.3+R()*1.2,(R()-.5)*1.7,.9);T.push({b:nb,u,v,r:.03+R()*.05});}
+    const puffs=[0,1,2,3,4,5,6].map(i=>wait(i*260+1).then(puff));
+    await Promise.all([moveAll(3200,T),...puffs]);
+    const g=el('g',{opacity:0},L.labels);el('line',{x1:240,y1:96,x2:380,y2:96,stroke:'#1c2631','stroke-width':2,'marker-end':'url(#arr)'},g);fade(g,1,500);label(310,86,'wind direction',undefined,undefined,'middle');
+    label(400,300,'oil pushed downwind and spread over a bigger area',452,214,'middle');cap('');
+  }
+},
+{ // 5
+  tag:'Activity 3 · Marine life', title:'How does oil affect marine life?',
+  doText:'Take your other feather and swirl it in the "crude oil." Move it around, then pull it out. Compare it to the clean feather from Activity 1.',
+  qs:[['1a','What do you observe?','After the oil, the feather looked... and it...']],
+  vocab:[['ingest','to swallow or take in.'],['insulation','something that holds heat in, like a coat.']],
+  result:`<p>The oil coats the feather. The barbs clump together, the feather turns dark and heavy, and water no longer rolls off.</p>
+  <p>For a real bird: it loses its waterproofing and insulation, so it gets cold fast. It can't float or fly well. When it preens to clean itself, it ingests the oil, which is toxic. Mammals with fur, like sea otters, have the same problem.</p>`,
+  scene(){slick(21,0,0,.2,8,.08,.14);this.F=feather(false);setPose(this.F,{x:400,y:-200});},
+  async play(){
+    const F=this.F;cap('Swirling the second feather in the oil');
+    await poseTo(F,1100,{y:38});ripple(400,200);
+    const base=blobs.map(b=>({u:b.u,v:b.v}));
+    await tween(2600,k=>{const a=k*Math.PI*4;setPose(F,{x:400+30*Math.sin(a),r:7*Math.sin(a*1.5)});blobs.forEach((b,i)=>{b.u=base[i].u+.03*Math.sin(a+i);b.v=base[i].v+.03*Math.cos(a+i*1.3);drawB(b);});},lin);
+    await poseTo(F,1000,{x:400,r:0,y:-35});cap('Your turn: answer 1a, then hit Reveal');
+  },
+  async reveal(){
+    const F=this.F;setPose(F,{x:400,y:-35,r:0});cap('Look at the feather now');
+    const O=feather(true);setPose(O,{x:400,y:-35});O.setAttribute('opacity',0);
+    await Promise.all([fade(O,1,1000),fade(F,0,1000),moveAll(1000,blobs.map(b=>({b,r:b.r*.9})))]);
+    for(let i=0;i<3;i++){const d=el('ellipse',{cx:398+i*3,cy:143,rx:3,ry:4.5,fill:'#24170a'},L.tools);await tween(550,k=>d.setAttribute('cy',143+57*k),t=>t*t);d.remove();ripple(400,200,22);}
+    label(452,62,'barbs clump together',418,70);await wait(300);
+    label(452,92,'coated, dark, and heavy',414,98);await wait(300);
+    label(452,122,'water no longer rolls off',410,126);cap('');
+  }
+},
+{ // 6
+  tag:'Activity 4 · Cleanup', title:'String: the oil boom',
+  doText:'Hold both ends of the string with two hands so it makes a big loop. Lay it on the water and drag it slowly across the oil, like a boom, to try to collect the oil in one place.',
+  sheet:'String row of the table',
+  qs:[['','What happens?','When we dragged the string across the oil, the oil...']],
+  vocab:[['oil boom','a floating barrier used to keep oil in one area.']],
+  result:`<p>The string pushed the oil ahead of it and bunched it together into a thicker pile in the curve of the string. Some oil slipped under the string or got around the ends.</p>
+  <p>Real crews do the same thing. Two boats tow a boom in a U shape to sweep oil together so skimmers can pick it up. It works in calm water, but waves, wind, and strong currents push oil over or under the boom. A boom doesn't remove oil. It just gathers it so it can be picked up.</p>`,
+  scene(){
+    [[.05,0,.13],[-.1,.2,.09],[.15,-.25,.1],[.2,.22,.08],[-.15,-.2,.08],[0,.45,.07],[.1,-.48,.07],[.3,.05,.09],[-.05,.72,.06],[.25,-.7,.06]].forEach(a=>blob(a[0],a[1],a[2]));
+    this.esc=[blobs[8],blobs[9]];
+    const g=el('g',{opacity:0},L.fx);this.sg=g;
+    this.str=[el('path',{fill:'none',stroke:'#c3a76c','stroke-width':4,'stroke-linecap':'round'},g),el('path',{fill:'none',stroke:'#8e7442','stroke-width':1.2,'stroke-dasharray':'5 5'},g)];
+    this.hands=[hand(),hand()];
+    this.uh=-.6;this.bow=.04;this.drawStr();
+  },
+  drawStr(){
+    const uh=this.uh,bow=this.bow;
+    const d=`M${sx(uh)},${sy(-.9)} Q${sx(uh-2*bow)},${sy(0)} ${sx(uh)},${sy(.9)}`;
+    this.str.forEach(p=>p.setAttribute('d',d));
+    setPose(this.hands[0],{x:sx(uh),y:sy(-.9)});setPose(this.hands[1],{x:sx(uh),y:sy(.9)});
+  },
+  async play(){
+    cap('Holding both ends of the string and laying it on the water');
+    fade(this.sg,1,500);this.hands.forEach(h=>fade(h,1,500));
+    await wait(700);ripple(sx(-.6),200,40);
+    cap('Dragging the string toward the oil');
+    const a=this.uh;
+    await tween(1600,k=>{this.uh=a+(-.32-a)*k;this.bow=.04+.03*k;this.drawStr();});
+    cap('Your turn: fill in the String row, then hit Reveal');
+  },
+  async reveal(){
+    this.sg.setAttribute('opacity',1);this.hands.forEach(h=>h.setAttribute('opacity',1));
+    cap('Dragging the string across the oil');
+    const a=this.uh,b0=this.bow;let last=0;
+    [0,1200,2400].forEach(t=>wait(t+1).then(()=>ripple(sx(this.uh-this.bow),200,35)));
+    await tween(3600,k=>{
+      this.uh=a+(.55-a)*k;this.bow=b0+(.3-b0)*k;this.drawStr();
+      const dk=k-last;last=k;
+      blobs.forEach(b=>{
+        if(this.esc.includes(b))return;
+        const q=Math.min(1,Math.abs(b.v)/.9);
+        const front=this.uh-this.bow*(1-q*q)+b.r*.5;
+        if(b.u<front){b.u=front;b.v+=(0-b.v)*Math.min(1,dk*1.5);b.r+=b.r*dk*.35;drawB(b);}
+      });
+    });
+    label(500,105,'oil bunched up in front of the string',478,196);
+    const e=this.esc[0];
+    label(330,300,'some slips under or around the ends',sx(e.u),sy(e.v),'middle');cap('');
+  }
+},
+{ // 7
+  tag:'Activity 4 · Cleanup', title:'Cup',
+  doText:'Use the cup to try to collect the oil.',
+  sheet:'Cup row of the table',
+  qs:[['','Does the oil spread out more?'],['','Why would this be a problem?','This is a problem because a bigger slick...']],
+  result:`<p>The cup grabbed mostly water and very little oil. Dipping it into the surface pushed the oil away, so the slick spread out thinner and wider.</p>
+  <p>That's a problem because a bigger slick covers more area, reaches more wildlife and shoreline, and is harder to contain. Plus now you have a cup of oily water to get rid of.</p>`,
+  scene(){slick(41,0,0,.22,8,.07,.13);this.C=cupG(false);setPose(this.C,{x:260,y:30});},
+  async play(){
+    const C=this.C;cap('Scooping at the oil with the cup');
+    await poseTo(C,1100,{x:372,y:194,r:-70});ripple(380,200,50);
+    const base=blobs.map(b=>({u:b.u}));
+    await Promise.all([poseTo(C,900,{x:425,y:198,r:-15}),tween(900,k=>blobs.forEach((b,i)=>{b.u=base[i].u+.04*Math.sin(k*3+i);drawB(b);}))]);
+    await poseTo(C,1000,{x:450,y:80,r:0});cap('Your turn: fill in the Cup row, then hit Reveal');
+  },
+  async reveal(){
+    const C=this.C;setPose(C,{x:450,y:80,r:0});cap('Look in the cup, and at the slick');
+    const w=el('path',{d:'M5,38 L55,38 L52,84 L8,84 Z',fill:'#7fb8d8',opacity:0},C);C.insertBefore(w,C.outline);
+    const o=el('rect',{x:5,y:35,width:50,height:4,fill:'#24170a',opacity:0},C);C.insertBefore(o,C.outline);
+    await Promise.all([fade(w,1,600),fade(o,1,600)]);
+    label(530,112,'mostly water, a little oil',514,118);
+    const R=rng(9);const T=blobs.map(b=>{const d=Math.hypot(b.u,b.v)||.01;const D=d*1.6+.18;const [u,v]=clampIn(b.u/d*D,b.v/d*D,.85);return{b,u,v,r:b.r*.72};});
+    for(let i=0;i<5;i++){const a=R()*6.283;const nb=blob(0,0,.02);const [u,v]=clampIn(Math.cos(a)*.62,Math.sin(a)*.62,.85);T.push({b:nb,u,v,r:.05});}
+    await moveAll(2400,T);
+    label(400,300,'slick pushed out thinner and wider',400,232,'middle');cap('');
+  }
+},
+{ // 8
+  tag:'Activity 4 · Cleanup', title:'Sponge',
+  doText:'Press the sponge onto the oil to try to absorb it.',
+  sheet:'Sponge row of the table',
+  qs:[['','Does the oil cling to it?','The oil (did / did not) cling to the sponge. I could tell because...']],
+  vocab:[['absorb','to soak up.'],['sheen','a thin, shiny film of oil left on the water.']],
+  result:`<p>Yes, oil clings to the sponge. But the sponge soaks up water too, and it leaves a thin sheen behind. Once it's full it can't hold any more.</p>
+  <p>The used sponge is now oily waste that has to be thrown out safely. Real crews use sorbent pads that are made to soak up oil while pushing water away.</p>`,
+  scene(){slick(51,0,0,.2,8,.07,.13);this.G=sponge();setPose(this.G,{x:400,y:30});},
+  async play(){const G=this.G;cap('Pressing the sponge onto the oil');await poseTo(G,1100,{y:202});ripple(400,202,60);await poseTo(G,350,{sy:.78});await poseTo(G,350,{sy:1});await wait(300);cap('Lifting it back up');await poseTo(G,1000,{y:96});cap('Your turn: fill in the Sponge row, then hit Reveal');},
+  async reveal(){
+    const G=this.G;setPose(G,{y:96,sy:1});cap('Look at the sponge and the water');
+    await fade(G.stain,.85,900);drips(400,98,['#24170a','#5ea4cc','#24170a']);
+    const T=blobs.filter(b=>Math.hypot(b.u,b.v)<.3).map(b=>({b,r:b.r*.3}));
+    const sh=el('ellipse',{cx:400,cy:200,rx:.34*SU,ry:.34*SV,fill:'#7a6a4a',opacity:0},L.sheen);
+    await Promise.all([moveAll(2000,T),fade(sh,.35,2000)]);
+    label(470,72,'soaked up some oil, and some water',452,80);
+    label(400,300,'thin sheen left behind',400,220,'middle');cap('');
+  }
+},
+{ // 9
+  tag:'Activity 4 · Cleanup', title:'Rag',
+  doText:'Dab the rag on the oil to try to absorb it.',
+  sheet:'Rag row of the table',
+  qs:[['','Does the oil cling to it?','Compared to the sponge, the rag...']],
+  result:`<p>Oil clings to the rag too. The cloth gets stained and heavy, and it drips a mix of oil and water.</p>
+  <p>Like the sponge, it gets some of the oil but not all of it, and the dirty rag becomes waste that has to go somewhere.</p>`,
+  scene(){slick(57,0,0,.22,8,.07,.13);this.G=rag();setPose(this.G,{x:370,y:30});},
+  async play(){
+    const G=this.G;cap('Dabbing the rag on the oil');
+    await poseTo(G,1000,{y:203});ripple(370,203,40);await poseTo(G,350,{y:175});
+    await poseTo(G,450,{x:432});await poseTo(G,350,{y:203});ripple(432,203,40);await wait(250);
+    cap('Lifting it back up');await poseTo(G,1000,{x:400,y:96});cap('Your turn: fill in the Rag row, then hit Reveal');
+  },
+  async reveal(){
+    const G=this.G;setPose(G,{x:400,y:96});cap('Look at the rag and the water');
+    await fade(G.stain,.9,900);drips(400,98,['#24170a','#5ea4cc','#24170a','#5ea4cc']);
+    const T=blobs.filter(b=>Math.abs(b.u)<.3&&Math.abs(b.v)<.3).map(b=>({b,r:b.r*.4}));
+    const sh=el('ellipse',{cx:400,cy:200,rx:.3*SU,ry:.3*SV,fill:'#7a6a4a',opacity:0},L.sheen);
+    await Promise.all([moveAll(2000,T),fade(sh,.3,2000)]);
+    label(480,70,'stained, heavy, and dripping',464,80);cap('');
+  }
+},
+{ // 10
+  tag:'Activity 4 · Cleanup', title:'Eyedropper',
+  doText:'Squeeze the bulb, touch the tip to the oil, then let go to siphon oil off the surface.',
+  sheet:'Eye Dropper row of the table',
+  qs:[['','What does it all pick up?','The dropper picked up...'],['','What would big companies do with all the oil they collect by siphoning?','Companies could take the oil and...']],
+  vocab:[['siphon','to pull liquid up through a tube.']],
+  result:`<p>It picks up oil <i>and</i> water. Even inside the dropper, the oil floats on top of the water.</p>
+  <p>Real cleanup boats use <b>skimmers</b> that work the same way. The oil and water get pumped into tanks where the oil separates out. The recovered oil can be cleaned and recycled or used as fuel, and the rest is handled as hazardous waste. Skimming is slow, and in a big spill it usually gets only a small part of the oil.</p>`,
+  scene(){slick(61,0,0,.18,7,.07,.12);this.D=dropper();setPose(this.D,{x:400,y:150});},
+  async play(){
+    const D=this.D;cap('Squeezing the bulb');await squeeze(D,.6,500);
+    cap('Touching the tip to the oil and letting go');await poseTo(D,1100,{y:203});ripple(400,203,18);
+    await squeeze(D,1,700);await wait(300);await poseTo(D,1000,{y:150});
+    cap('Your turn: fill in the Eye Dropper row, then hit Reveal');
+  },
+  async reveal(){
+    const D=this.D;setPose(D,{y:150});cap('Look inside the dropper');
+    await tween(1000,k=>{const h=56*k;D.water.setAttribute('y',-h);D.water.setAttribute('height',h);});
+    await tween(700,k=>{const h=22*k;D.oil.setAttribute('y',-56-h);D.oil.setAttribute('height',h);});
+    const near=[...blobs].sort((a,b)=>Math.hypot(a.u,a.v)-Math.hypot(b.u,b.v)).slice(0,2);
+    moveAll(900,near.map(b=>({b,r:b.r*.6})));
+    label(440,88,'oil floats on top',410,84);
+    label(440,126,'water',410,122);cap('');
+  }
+},
+{ // 11
+  tag:'Activity 4 · Step 2', title:'Dispersant',
+  doText:'You tried to hold the oil in one spot and to soak it up. Now place ONE drop of dish detergent on the oil in the water.',
+  qs:[['2a','What effect did the detergent (dispersant) have on the oil?','The detergent made the oil...'],['2b','Did the detergent break up the oil but also make the oil spread out? Explain.','(Yes / No), because when the detergent hit the oil...']],
+  vocab:[['dispersant','a chemical used to try to break up oil.']],
+  result:`<p><b>2a:</b> The oil broke apart into lots of tiny droplets that pushed out away from where the drop landed.</p>
+  <p><b>2b:</b> Yes. It broke the oil up, but it also spread it over a much bigger area. A dispersant has one end that grabs oil and one end that grabs water, so it lets the oil mix into the water as tiny droplets instead of staying together as one slick.</p>`,
+  scene(){slick(71,0,0,.22,9,.08,.14);this.B=bottle();setPose(this.B,{x:560,y:-40});},
+  async play(){
+    const B=this.B;cap('Adding ONE drop of dish detergent');
+    await poseTo(B,1100,{x:400,y:96});await poseTo(B,250,{sx:.9});await poseTo(B,250,{sx:1});
+    const d=el('circle',{cx:400,cy:100,r:4.5,fill:'#8fd0a3',stroke:'#3d6a4d','stroke-width':1},L.tools);
+    await tween(600,k=>d.setAttribute('cy',100+100*k),t=>t*t);d.remove();ripple(400,200,30);
+    await poseTo(B,900,{x:560,y:-60});cap('Your turn: answer 2a and 2b, then hit Reveal');
+  },
+  async reveal(){
+    setPose(this.B,{x:560,y:-60});cap('Watch the oil');
+    const R=rng(17);const T=[];
+    blobs.forEach(b=>{for(let i=0;i<9;i++){const a=R()*6.283,q=Math.sqrt(R())*b.r;const u=b.u+Math.cos(a)*q,v=b.v+Math.sin(a)*q;const nd=drop(u,v,.025+R()*.015);const d=Math.hypot(u,v)||.01;const D=.5+R()*.38;const [tu,tv]=clampIn(u/d*D+(R()-.5)*.1,v/d*D+(R()-.5)*.1,.9);T.push({b:nd,u:tu,v:tv,r:.012+R()*.016});}T.push({b,r:0});});
+    await moveAll(2400,T,easeOut);
+    blobs.forEach(b=>b.e.remove());blobs=[];
+    const e=drops.find(d=>d.u>.3&&d.v<0)||drops[0];
+    label(600,112,'tiny droplets',sx(e.u),sy(e.v));
+    label(400,300,'oil broken up, but spread over a bigger area',400,236,'middle');cap('');
+  }
+},
+{ // 12
+  tag:'Activity 4 · Step 3', title:'Stirring like the ocean',
+  doText:'Use the spoon to stir the water, the way waves, wind, and currents mix the ocean.',
+  qs:[['3a','What do you observe happening?','When I stirred, the tiny droplets...'],['3b','Is your "ocean" clean now? Where did all the DISPERSED oil go?','The ocean (is / is not) clean because the oil went...'],['3c','What problems might occur because of using a dispersant?'],['3d','Will the dispersant affect wildlife and aquatic life the same as the oil? Explain why.','Surface oil mostly hurts ___, but dispersed oil mostly hurts ___ because...']],
+  vocab:[['water column','all the water between the surface and the bottom, where fish and plankton live.']],
+  result:`<p><b>3a:</b> The tiny droplets mixed down into the water. The surface looks cleaner, but the water gets cloudy.</p>
+  <p><b>3b:</b> No. The oil didn't leave. It moved from the surface into the water column.</p>
+  <p><b>3c:</b> Now fish, plankton, shellfish, and coral are exposed to it. The dispersant chemicals can be toxic too, and some studies found the oil and dispersant mix is more toxic to certain organisms than the oil alone.</p>
+  <p><b>3d:</b> Not the same. Surface oil mostly hurts birds and mammals that touch it and the shorelines it washes onto. Dispersed oil mostly hurts life underwater. One upside: bacteria break tiny droplets down faster than a thick slick.</p>`,
+  scene(){const R=rng(81);for(let i=0;i<75;i++){const a=R()*6.283,d=.25+Math.sqrt(R())*.65;drop(Math.cos(a)*d,Math.sin(a)*d,.012+R()*.016);}this.P=spoon();setPose(this.P,{x:520,y:-40,r:8});},
+  async play(){
+    const P=this.P;cap('Stirring with the spoon, like waves and currents');
+    await poseTo(P,900,{y:205});ripple(520,205,30);
+    const base=drops.map(d=>({a:Math.atan2(d.v,d.u),r:Math.hypot(d.u,d.v)}));
+    await tween(3400,k=>{const a=k*Math.PI*4;setPose(P,{x:400+120*Math.cos(a),y:205+28*Math.sin(a)});drops.forEach((d,i)=>{const q=base[i];const aa=q.a+a*.5*(1.2-q.r);d.u=Math.cos(aa)*q.r;d.v=Math.sin(aa)*q.r;drawB(d);});},lin);
+    await poseTo(P,800,{y:-60});cap('Your turn: answer 3a to 3d, then hit Reveal');
+  },
+  async reveal(){
+    setPose(this.P,{y:-60});cap('Where did the oil go?');
+    const R=rng(91);
+    const tint=el('path',{d:'M145,200 L170,380 A230,52 0 0,0 630,380 L655,200 Z',fill:'#6d5a36',opacity:0},L.col);
+    const moves=[];
+    for(let i=0;i<80;i++){const x=190+R()*420;const top=frontTop(x)+4,bot=frontBot(x)-6;const y0=top+R()*10,y1=top+R()*(bot-top);const dx=(R()-.5)*30;
+      const c=el('circle',{cx:x,cy:y0,r:1.2+R()*1.8,fill:'#2f2210',opacity:0},L.col);
+      moves.push(tween(2600,k=>{c.setAttribute('cy',y0+(y1-y0)*k);c.setAttribute('cx',x+dx*k);c.setAttribute('opacity',Math.min(1,k*3)*.85);},easeOut));}
+    moves.push(moveAll(2600,drops.map((d,i)=>({b:d,r:i%4?0:.006}))));
+    moves.push(fade(tint,.16,2600));
+    await Promise.all(moves);
+    label(600,112,'surface looks cleaner',520,196);
+    label(400,452,'but the oil is now mixed down into the water',400,330,'middle');cap('');
+  }
+},
+{ // 13
+  tag:'Wrap up', title:'Comparing the methods',
+  doText:'Look over the table. Then go to the <b>Discussion Questions</b> page of your packet and answer #1 to #5. You can use other resources. We will go over these in class, so make your answers complete.',
+  scene(){showOverlay(CMP);}
+}
+];
+
+/* ---------- panel and navigation ---------- */
+const panel=$('panel');
+function renderPanel(s){
+  let h=`<div class="tag">${s.tag}</div><h2>${s.title}</h2>`;
+  if(s.pre)h+=s.pre;
+  if(s.doText)h+=`<div class="box do"><h3>Do this</h3><p>${s.doText}</p></div>`;
+  if(s.qs)h+=`<div class="box ask"><h3>Answer on your sheet${s.sheet?' · '+s.sheet:''}</h3><ol class="qs">${s.qs.map(q=>`<li><span class="qn">${q[0]}</span>${q[1]}${q[2]?`<button class="starter" type="button">sentence starter</button><div class="st">${q[2]}</div>`:''}</li>`).join('')}</ol></div>`;
+  if(s.vocab)h+=`<p class="vocab">${s.vocab.map(v=>`<b>${v[0]}:</b> ${v[1]}`).join('<br>')}</p>`;
+  if(s.result)h+=`<button class="btn primary" id="rev" type="button" disabled>Watch the step first</button>
+    <p class="hint">Jot a quick prediction first. Then reveal and write what actually happened on your sheet.</p>
+    <div class="result" id="res" hidden><h3>What happened</h3>${s.result}</div>`;
+  panel.innerHTML=h;
+  panel.querySelectorAll('.starter').forEach(b=>b.onclick=()=>b.nextElementSibling.classList.toggle('show'));
+  const r=$('rev');if(r)r.onclick=doReveal;
+  syncFs();
+}
+function clearScene(){Object.values(L).forEach(g=>{while(g.firstChild)g.removeChild(g.firstChild);});blobs=[];drops=[];notes=[];clearLegend();hideOverlay();cap('');}
+function clearLegend(){$('legend').innerHTML='';$('legend').classList.remove('on');}
+async function runStep(){
+  runId++;const id=runId;const s=S[cur];
+  clearScene();renderPanel(s);
+  if(!s.result)seen.add(cur);
+  updateNav();
+  $('replay').disabled=!s.play;
+  if(s.scene)s.scene();
+  if(s.play){await s.play();if(id!==runId)return;}
+  const r=$('rev');if(r){r.disabled=false;r.textContent=s.revLabel||'Reveal what happened';}
+  syncFs();
+}
+async function doReveal(){
+  const s=S[cur];const r=$('rev');r.hidden=true;
+  const h=panel.querySelector('.hint');if(h)h.remove();
+  $('res').hidden=false;seen.add(cur);updateNav();syncFs();
+  if(mode&&!document.body.classList.contains('fs'))document.querySelector('.stagewrap').scrollIntoView({behavior:'smooth',block:'start'});
+  if(s.reveal)await s.reveal();
+}
+function go(i){if(i<0||i>=S.length)return;cur=i;runStep();window.scrollTo({top:0,behavior:'smooth'});}
+function updateNav(){
+  const d=$('dots');
+  if(!d.children.length)S.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.textContent=i+1;b.title=s.title;b.onclick=()=>go(i);d.appendChild(b);});
+  [...d.children].forEach((b,i)=>{b.className=(i===cur?'on ':'')+(seen.has(i)?'done':'');});
+  $('count').textContent=`Step ${cur+1} of ${S.length}`;
+  $('prev').disabled=cur===0;$('next').disabled=cur===S.length-1;
+}
+$('prev').onclick=()=>go(cur-1);
+$('next').onclick=()=>go(cur+1);
+$('replay').onclick=()=>runStep();
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1);});
+/* ---------- full screen ---------- */
+const wrap=document.querySelector('.stagewrap');
+function syncFs(){
+  const r=$('rev'),f=$('fsRev');
+  f.classList.toggle('gone',!(r&&!r.hidden));
+  f.disabled=!r||r.disabled;
+  f.textContent=r&&!r.disabled?(S[cur].revLabel||'Reveal'):'Watch first';
+}
+function setFs(on){
+  document.body.classList.toggle('fs',on);
+  $('fsBtn').lastChild.textContent=on?'Exit full screen':'Full screen';
+  $('fsBtn').setAttribute('aria-pressed',on);
+  syncFs();
+  if(isNarrow()!==mode)applyMode();
+}
+function toggleFs(){
+  const on=!document.body.classList.contains('fs');
+  const d=document,de=d.documentElement;
+  setFs(on);
+  try{
+    if(on){const req=de.requestFullscreen||de.webkitRequestFullscreen;if(req&&!(d.fullscreenElement||d.webkitFullscreenElement)){const p=req.call(de);if(p&&p.catch)p.catch(()=>{});}}
+    else{const ex=d.exitFullscreen||d.webkitExitFullscreen;if(ex&&(d.fullscreenElement||d.webkitFullscreenElement)){const p=ex.call(d);if(p&&p.catch)p.catch(()=>{});}}
+  }catch(e){}
+}
+function onFsChange(){if(!(document.fullscreenElement||document.webkitFullscreenElement)&&document.body.classList.contains('fs'))setFs(false);}
+document.addEventListener('fullscreenchange',onFsChange);
+document.addEventListener('webkitfullscreenchange',onFsChange);
+$('fsBtn').onclick=toggleFs;
+$('fsRev').onclick=()=>{const r=$('rev');if(r&&!r.disabled&&!r.hidden)doReveal();};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('fs'))toggleFs();});
+
+function applyMode(){
+  mode=isNarrow();
+  $('stage').setAttribute('viewBox',mode?'130 30 540 430':'0 0 800 460');
+  box.classList.toggle('narrow',mode);
+  if($('overlay').style.display==='block')box.classList.toggle('ov-on',mode);
+  while(L.notes.firstChild)L.notes.removeChild(L.notes.firstChild);
+  clearLegend();notes.forEach((a,i)=>drawNote(a,i+1,false));
+}
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{if(isNarrow()!==mode)applyMode();},150);});
+applyMode();
+runStep();
+</script>
+</body>
+</html>
