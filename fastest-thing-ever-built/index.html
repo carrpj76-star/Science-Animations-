@@ -87,7 +87,9 @@ svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 // Change this to match the string your class uses.
 const LOOP_CM = 16;
 // Pin spacing for Orbit 1 and Orbit 2 (cm), from Part 2 of the worksheet.
-const PINS_1 = 1, PINS_2 = 3;
+// Orbit 1: pins on the 1 marks on each side of center (2 cm apart).
+// Orbit 2: pins on the 3 marks on each side of center (6 cm apart).
+const PINS_1 = 2, PINS_2 = 6;
 
 /* ===== Helpers ===== */
 const NS = 'http://www.w3.org/2000/svg', TAU = Math.PI * 2;
@@ -315,7 +317,7 @@ scenes.push({part:'Part 2', title:'Draw an Orbit: Orbit 1', run(){
   sheet();
   const g1 = orbitGeom(PINS_1);
   trace(g1, 'orbit', 6, () => labelOrbit(g1));
-  setPanel(`<p><b>a.</b> Lay the graph paper on the cardboard. Push two pins into the middle of the paper, <b>${PINS_1} cm apart</b>. Center them on the + mark, so each pin is <b>${PINS_1 / 2} cm</b> from the center.</p>
+  setPanel(`<p><b>a.</b> Lay the graph paper on the cardboard. Push one pin into the <b>${PINS_1 / 2}</b> mark on each side of the center +. Your pins are now <b>${PINS_1} cm apart</b>.</p>
   <p><b>b.</b> Put the string loop around both pins. Pull it tight with your pencil and trace all the way around. This is <b>Orbit 1</b>.</p>
   <p><b>d.</b> Label one pin hole <b>SUN</b>. Write <b>CLOSEST</b> at the point on the orbit nearest the Sun and <b>FARTHEST</b> at the point farthest away.</p>
   <p class="note">Keep the string tight and the pencil straight up. This animation uses a ${LOOP_CM} cm string loop, so your orbit may be a little bigger or smaller.</p>`);
@@ -337,7 +339,7 @@ scenes.push({part:'Part 2', title:'Draw an Orbit: Orbit 2', run(){
       return false;
     }
   });
-  setPanel(`<p><b>c.</b> Move the pins to <b>${PINS_2} cm apart</b>, centered in the same spot. Each pin is now <b>${PINS_2 / 2} cm</b> from the center. Trace again. This is <b>Orbit 2</b>.</p>
+  setPanel(`<p><b>c.</b> Move the pins out to the <b>${PINS_2 / 2}</b> mark on each side of the center +. Your pins are now <b>${PINS_2} cm apart</b>. Trace again. This is <b>Orbit 2</b>.</p>
   ${Q(3, 'Which orbit is more stretched out (more eccentric)?', 'Orbit 2. Its pins are farther apart, so the orbit is more stretched out.')}`);
 }});
 
@@ -359,7 +361,7 @@ scenes.push({part:'Part 2', title:'Calculate Eccentricity', run(){
         fl:el('line', {stroke:'#f87171', 'stroke-width':5, 'stroke-linecap':'round', opacity:0}, grp),
         ft:txt(OX, OY + 50, '', {class:'lbl halo', 'text-anchor':'middle', style:'fill:#f87171;font-weight:650'}, grp),
         ml:el('line', {stroke:cols[i], 'stroke-width':4, 'stroke-linecap':'round', opacity:0}, grp),
-        mt:txt(OX - g.a * S * 0.5, OY - 12, '', {class:'lbl halo', 'text-anchor':'middle', style:`fill:${cols[i]};font-weight:650`}, grp)};
+        mt:txt(OX - g.a * S * 0.62, OY - 12, '', {class:'lbl halo', 'text-anchor':'middle', style:`fill:${cols[i]};font-weight:650`}, grp)};
     });
     const grow = (line, x1, x2, y, f) => { const m = (x1 + x2) / 2, h = (x2 - x1) / 2 * f; set(line, {x1:m - h, x2:m + h, y1:y, y2:y, opacity:f > 0 ? 1 : 0}); };
     animate(t => {
@@ -398,9 +400,9 @@ scenes.push({part:'Part 2', title:'What Changes the Shape?', run(){
   const r1 = txt(58, 40, '', {class:'lbl'}, box), r2 = txt(58, 62, '', {class:'lbl'}, box), r3 = txt(58, 88, '', {class:'lblB'}, box);
   setPanel(`<p>Drag the slider to move the pins. The string loop stays the same.</p>
   <label for="dslider" class="note">Distance between pins (cm)</label>
-  <input type="range" id="dslider" min="0" max="7.5" step="0.1" value="1">
+  <input type="range" id="dslider" min="0" max="7.5" step="0.1" value="${PINS_1}">
   ${Q(5, 'What happens to the shape of an orbit as the two pins (the foci) move closer together?', 'The orbit gets rounder, closer to a circle. The eccentricity gets closer to 0.')}
-  ${Q(6, 'Is the Sun at the center of either orbit? Explain.', 'No. The Sun is at one of the pins (a focus), not at the center. The center is halfway between the two pins. In Orbit 1 the Sun is only half a centimeter off center, so it looks close, but it is still not at the center.')}`);
+  ${Q(6, 'Is the Sun at the center of either orbit? Explain.', `No. The Sun is at one of the pins (a focus), not at the center. The center is halfway between the two pins. In Orbit 1 the Sun is only ${PINS_1 / 2} cm off center, so it looks close, but it is still not at the center.`)}`);
   const sl = $('dslider');
   function draw(d){
     const g = orbitGeom(d);
@@ -417,24 +419,58 @@ scenes.push({part:'Part 2', title:'What Changes the Shape?', run(){
 // 6. Equal time, unequal distance
 scenes.push({part:'Part 3', title:'Equal Slices, Unequal Speeds', run(){
   eaBase();
-  const dots = el('g'), line = el('line', {class:'sweep'});
+  const shade = el('g'), dots = el('g'), line = el('line', {class:'sweep'});
   eaSun();
   const obj = el('circle', {r:7, class:'probe'});
-  const info = el('g');
-  el('rect', {x:160, y:430, width:210, height:24, rx:5, fill:'#0b1220', stroke:'#22304d'}, info);
-  const lab = txt(170, 447, '', {class:'lblS'}, info);
-  let dropped = 0; const T = 12;
+  const T = 24, STEP = T / 12, SLICE = Math.PI * EA.a * EA.b / 12;
+  const FILL = ['rgba(251,191,36,.34)', 'rgba(56,189,248,.30)'], EDGE = ['#fbbf24', '#38bdf8'];
+  const Ek = k => k >= 12 ? TAU : eaE(k);
+  const arc = (E1, E2) => { let L = 0; const n = 200; for (let i = 0; i < n; i++){ const E = E1 + (E2 - E1) * (i + .5) / n; L += Math.hypot(EA.a * Math.sin(E), EA.b * Math.cos(E)) * (E2 - E1) / n; } return L; };
+  const DIST = [...Array(12)].map((_, k) => arc(Ek(k), Ek(k + 1))), DMAX = Math.max(...DIST);
+  // readout
+  const R = el('g'), RX = 642, BW = 144, HOLD = 4;
+  el('rect', {x:RX - 10, y:22, width:BW + 20, height:214, rx:6, fill:'#0b1220', stroke:'#22304d'}, R);
+  const rStep = txt(RX, 46, '', {class:'lbl', style:'font-weight:650'}, R);
+  const bar = (y, label, col) => {
+    txt(RX, y, label, {class:'lblS'}, R);
+    el('rect', {x:RX, y:y + 8, width:BW, height:10, rx:5, fill:'#1e2b47'}, R);
+    const b = el('rect', {x:RX, y:y + 8, width:0, height:10, rx:5, fill:col}, R);
+    const v = txt(RX, y + 36, '', {class:'lbl'}, R);
+    return {b, v};
+  };
+  const bT = bar(74, 'Time this step', '#e2e8f0');
+  const bA = bar(128, 'Area swept this step', '#fbbf24');
+  const bD = bar(182, 'Distance this step', '#f87171');
+  let dropped = 0, lap = -1, slices = [];
   animate(t => {
-    const p = kpos(t / T, EA.e, EA.a, EA.b), x = EA.sunX + p.x * EA.s, y = EA.cy - p.y * EA.s;
+    const L = Math.floor(t / (T + HOLD));
+    if (L !== lap){ lap = L; shade.innerHTML = ''; slices = []; }
+    const raw = t - L * (T + HOLD), held = raw >= T;
+    const tl = held ? T - 1e-6 : raw, k = Math.min(11, Math.floor(tl / STEP)), f = (tl - k * STEP) / STEP;
+    const p = kpos(tl / T, EA.e, EA.a, EA.b), x = EA.sunX + p.x * EA.s, y = EA.cy - p.y * EA.s;
     set(obj, {cx:x, cy:y}); set(line, {x1:EA.sunX, y1:EA.cy, x2:x, y2:y});
-    while (dropped < 12 && t >= dropped * T / 12){ eaDot(dropped, dots); dropped++; }
-    const k = Math.floor((t % T) / (T / 12));
-    lab.textContent = `Moving from dot ${k + 1} to dot ${(k + 1) % 12 + 1}`;
+    while (dropped < 12 && (L > 0 || tl >= dropped * STEP)){ eaDot(dropped, dots); dropped++; }
+    // finish earlier slices, grow the current one
+    while (slices.length <= k){
+      const j = slices.length;
+      slices.push(el('polygon', {fill:FILL[j % 2], stroke:EDGE[j % 2], 'stroke-width':1, 'stroke-opacity':.6}, shade));
+      if (j < k) slices[j].setAttribute('points', ptsStr(slicePoly(Ek(j), Ek(j + 1), 1)));
+    }
+    let Ecur = p.E; if (Ecur < Ek(k) - 1e-9) Ecur += TAU;
+    const ff = Math.max(0, Math.min(1, (Ecur - Ek(k)) / (Ek(k + 1) - Ek(k))));
+    if (ff > 0) slices[k].setAttribute('points', ptsStr(slicePoly(Ek(k), Ek(k + 1), ff)));
+    const d = arc(Ek(k), Ek(k) + (Ek(k + 1) - Ek(k)) * ff);
+    rStep.textContent = held ? 'All 12 slices equal' : `Dot ${k + 1} to dot ${(k + 1) % 12 + 1}`;
+    set(bT.b, {width:BW * f}); bT.v.textContent = `${(f * 30).toFixed(0)} of 30 days`;
+    set(bA.b, {width:BW * f}); bA.v.textContent = `${(SLICE * f).toFixed(1)} of ${SLICE.toFixed(1)} squares`;
+    set(bD.b, {width:BW * d / DMAX}); bD.v.textContent = `${d.toFixed(1)} cm`;
   });
   setPanel(`<p>Kepler discovered that a line from the Sun to a planet sweeps out <b>equal areas in equal amounts of time</b>. Let's see what that means for speed.</p>
-  <p>This object takes the <b>same amount of time</b> to move from one numbered dot to the next. Watch where the dots land.</p>
+  <p>This object takes the <b>same amount of time</b> to move from one numbered dot to the next. Each colored slice is the area the Sun line sweeps out during one step.</p>
+  <p>Watch the meters. Every step takes the same time and sweeps the same area, about ${SLICE.toFixed(1)} squares. The distance the object travels is what changes.</p>
+  <p class="note">If this object took 360 days to go around once, each of the 12 steps would take 30 days. Use Pause to stop on any slice.</p>
   ${Q(7, 'Where are the dots far apart, and where are they close together?', 'Far apart near the Sun (around dots 12, 1, and 2). Close together on the far side of the orbit (around dots 6, 7, and 8).')}
-  ${Q(8, 'Where does an object travel a greater distance in the same amount of time: closer to the Sun or farther from the Sun? Explain.', 'Closer to the Sun. The dots are farther apart there, so the object covers more distance in the same amount of time. More distance in the same time means it is moving faster.')}`);
+  ${Q(8, 'Where does an object travel a greater distance in the same amount of time: closer to the Sun or farther from the Sun? Explain.', `Closer to the Sun. The dots are farther apart there, so the object covers more distance in the same amount of time. Near the Sun it travels about ${DIST[0].toFixed(1)} cm in one step. On the far side it only travels about ${DIST[6].toFixed(1)} cm. More distance in the same time means it is moving faster.`)}`);
 }});
 
 // 7. Shade the slices
