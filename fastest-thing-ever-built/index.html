@@ -417,24 +417,58 @@ scenes.push({part:'Part 2', title:'What Changes the Shape?', run(){
 // 6. Equal time, unequal distance
 scenes.push({part:'Part 3', title:'Equal Slices, Unequal Speeds', run(){
   eaBase();
-  const dots = el('g'), line = el('line', {class:'sweep'});
+  const shade = el('g'), dots = el('g'), line = el('line', {class:'sweep'});
   eaSun();
   const obj = el('circle', {r:7, class:'probe'});
-  const info = el('g');
-  el('rect', {x:160, y:430, width:210, height:24, rx:5, fill:'#0b1220', stroke:'#22304d'}, info);
-  const lab = txt(170, 447, '', {class:'lblS'}, info);
-  let dropped = 0; const T = 12;
+  const T = 24, STEP = T / 12, SLICE = Math.PI * EA.a * EA.b / 12;
+  const FILL = ['rgba(251,191,36,.34)', 'rgba(56,189,248,.30)'], EDGE = ['#fbbf24', '#38bdf8'];
+  const Ek = k => k >= 12 ? TAU : eaE(k);
+  const arc = (E1, E2) => { let L = 0; const n = 200; for (let i = 0; i < n; i++){ const E = E1 + (E2 - E1) * (i + .5) / n; L += Math.hypot(EA.a * Math.sin(E), EA.b * Math.cos(E)) * (E2 - E1) / n; } return L; };
+  const DIST = [...Array(12)].map((_, k) => arc(Ek(k), Ek(k + 1))), DMAX = Math.max(...DIST);
+  // readout
+  const R = el('g'), RX = 642, BW = 144, HOLD = 4;
+  el('rect', {x:RX - 10, y:22, width:BW + 20, height:214, rx:6, fill:'#0b1220', stroke:'#22304d'}, R);
+  const rStep = txt(RX, 46, '', {class:'lbl', style:'font-weight:650'}, R);
+  const bar = (y, label, col) => {
+    txt(RX, y, label, {class:'lblS'}, R);
+    el('rect', {x:RX, y:y + 8, width:BW, height:10, rx:5, fill:'#1e2b47'}, R);
+    const b = el('rect', {x:RX, y:y + 8, width:0, height:10, rx:5, fill:col}, R);
+    const v = txt(RX, y + 36, '', {class:'lbl'}, R);
+    return {b, v};
+  };
+  const bT = bar(74, 'Time this step', '#e2e8f0');
+  const bA = bar(128, 'Area swept this step', '#fbbf24');
+  const bD = bar(182, 'Distance this step', '#f87171');
+  let dropped = 0, lap = -1, slices = [];
   animate(t => {
-    const p = kpos(t / T, EA.e, EA.a, EA.b), x = EA.sunX + p.x * EA.s, y = EA.cy - p.y * EA.s;
+    const L = Math.floor(t / (T + HOLD));
+    if (L !== lap){ lap = L; shade.innerHTML = ''; slices = []; }
+    const raw = t - L * (T + HOLD), held = raw >= T;
+    const tl = held ? T - 1e-6 : raw, k = Math.min(11, Math.floor(tl / STEP)), f = (tl - k * STEP) / STEP;
+    const p = kpos(tl / T, EA.e, EA.a, EA.b), x = EA.sunX + p.x * EA.s, y = EA.cy - p.y * EA.s;
     set(obj, {cx:x, cy:y}); set(line, {x1:EA.sunX, y1:EA.cy, x2:x, y2:y});
-    while (dropped < 12 && t >= dropped * T / 12){ eaDot(dropped, dots); dropped++; }
-    const k = Math.floor((t % T) / (T / 12));
-    lab.textContent = `Moving from dot ${k + 1} to dot ${(k + 1) % 12 + 1}`;
+    while (dropped < 12 && (L > 0 || tl >= dropped * STEP)){ eaDot(dropped, dots); dropped++; }
+    // finish earlier slices, grow the current one
+    while (slices.length <= k){
+      const j = slices.length;
+      slices.push(el('polygon', {fill:FILL[j % 2], stroke:EDGE[j % 2], 'stroke-width':1, 'stroke-opacity':.6}, shade));
+      if (j < k) slices[j].setAttribute('points', ptsStr(slicePoly(Ek(j), Ek(j + 1), 1)));
+    }
+    let Ecur = p.E; if (Ecur < Ek(k) - 1e-9) Ecur += TAU;
+    const ff = Math.max(0, Math.min(1, (Ecur - Ek(k)) / (Ek(k + 1) - Ek(k))));
+    if (ff > 0) slices[k].setAttribute('points', ptsStr(slicePoly(Ek(k), Ek(k + 1), ff)));
+    const d = arc(Ek(k), Ek(k) + (Ek(k + 1) - Ek(k)) * ff);
+    rStep.textContent = held ? 'All 12 slices equal' : `Dot ${k + 1} to dot ${(k + 1) % 12 + 1}`;
+    set(bT.b, {width:BW * f}); bT.v.textContent = `${(f * 30).toFixed(0)} of 30 days`;
+    set(bA.b, {width:BW * f}); bA.v.textContent = `${(SLICE * f).toFixed(1)} of ${SLICE.toFixed(1)} squares`;
+    set(bD.b, {width:BW * d / DMAX}); bD.v.textContent = `${d.toFixed(1)} cm`;
   });
   setPanel(`<p>Kepler discovered that a line from the Sun to a planet sweeps out <b>equal areas in equal amounts of time</b>. Let's see what that means for speed.</p>
-  <p>This object takes the <b>same amount of time</b> to move from one numbered dot to the next. Watch where the dots land.</p>
+  <p>This object takes the <b>same amount of time</b> to move from one numbered dot to the next. Each colored slice is the area the Sun line sweeps out during one step.</p>
+  <p>Watch the meters. Every step takes the same time and sweeps the same area, about ${SLICE.toFixed(1)} squares. The distance the object travels is what changes.</p>
+  <p class="note">If this object took 360 days to go around once, each of the 12 steps would take 30 days. Use Pause to stop on any slice.</p>
   ${Q(7, 'Where are the dots far apart, and where are they close together?', 'Far apart near the Sun (around dots 12, 1, and 2). Close together on the far side of the orbit (around dots 6, 7, and 8).')}
-  ${Q(8, 'Where does an object travel a greater distance in the same amount of time: closer to the Sun or farther from the Sun? Explain.', 'Closer to the Sun. The dots are farther apart there, so the object covers more distance in the same amount of time. More distance in the same time means it is moving faster.')}`);
+  ${Q(8, 'Where does an object travel a greater distance in the same amount of time: closer to the Sun or farther from the Sun? Explain.', `Closer to the Sun. The dots are farther apart there, so the object covers more distance in the same amount of time. Near the Sun it travels about ${DIST[0].toFixed(1)} cm in one step. On the far side it only travels about ${DIST[6].toFixed(1)} cm. More distance in the same time means it is moving faster.`)}`);
 }});
 
 // 7. Shade the slices
