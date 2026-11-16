@@ -87,7 +87,9 @@ svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 // Change this to match the string your class uses.
 const LOOP_CM = 16;
 // Pin spacing for Orbit 1 and Orbit 2 (cm), from Part 2 of the worksheet.
-const PINS_1 = 1, PINS_2 = 3;
+// Orbit 1: pins on the 1 marks on each side of center (2 cm apart).
+// Orbit 2: pins on the 3 marks on each side of center (6 cm apart).
+const PINS_1 = 2, PINS_2 = 6;
 
 /* ===== Helpers ===== */
 const NS = 'http://www.w3.org/2000/svg', TAU = Math.PI * 2;
@@ -315,7 +317,7 @@ scenes.push({part:'Part 2', title:'Draw an Orbit: Orbit 1', run(){
   sheet();
   const g1 = orbitGeom(PINS_1);
   trace(g1, 'orbit', 6, () => labelOrbit(g1));
-  setPanel(`<p><b>a.</b> Lay the graph paper on the cardboard. Push two pins into the middle of the paper, <b>${PINS_1} cm apart</b>. Center them on the + mark, so each pin is <b>${PINS_1 / 2} cm</b> from the center.</p>
+  setPanel(`<p><b>a.</b> Lay the graph paper on the cardboard. Push one pin into the <b>${PINS_1 / 2}</b> mark on each side of the center +. Your pins are now <b>${PINS_1} cm apart</b>.</p>
   <p><b>b.</b> Put the string loop around both pins. Pull it tight with your pencil and trace all the way around. This is <b>Orbit 1</b>.</p>
   <p><b>d.</b> Label one pin hole <b>SUN</b>. Write <b>CLOSEST</b> at the point on the orbit nearest the Sun and <b>FARTHEST</b> at the point farthest away.</p>
   <p class="note">Keep the string tight and the pencil straight up. This animation uses a ${LOOP_CM} cm string loop, so your orbit may be a little bigger or smaller.</p>`);
@@ -337,7 +339,7 @@ scenes.push({part:'Part 2', title:'Draw an Orbit: Orbit 2', run(){
       return false;
     }
   });
-  setPanel(`<p><b>c.</b> Move the pins to <b>${PINS_2} cm apart</b>, centered in the same spot. Each pin is now <b>${PINS_2 / 2} cm</b> from the center. Trace again. This is <b>Orbit 2</b>.</p>
+  setPanel(`<p><b>c.</b> Move the pins out to the <b>${PINS_2 / 2}</b> mark on each side of the center +. Your pins are now <b>${PINS_2} cm apart</b>. Trace again. This is <b>Orbit 2</b>.</p>
   ${Q(3, 'Which orbit is more stretched out (more eccentric)?', 'Orbit 2. Its pins are farther apart, so the orbit is more stretched out.')}`);
 }});
 
@@ -359,7 +361,7 @@ scenes.push({part:'Part 2', title:'Calculate Eccentricity', run(){
         fl:el('line', {stroke:'#f87171', 'stroke-width':5, 'stroke-linecap':'round', opacity:0}, grp),
         ft:txt(OX, OY + 50, '', {class:'lbl halo', 'text-anchor':'middle', style:'fill:#f87171;font-weight:650'}, grp),
         ml:el('line', {stroke:cols[i], 'stroke-width':4, 'stroke-linecap':'round', opacity:0}, grp),
-        mt:txt(OX - g.a * S * 0.5, OY - 12, '', {class:'lbl halo', 'text-anchor':'middle', style:`fill:${cols[i]};font-weight:650`}, grp)};
+        mt:txt(OX - g.a * S * 0.62, OY - 12, '', {class:'lbl halo', 'text-anchor':'middle', style:`fill:${cols[i]};font-weight:650`}, grp)};
     });
     const grow = (line, x1, x2, y, f) => { const m = (x1 + x2) / 2, h = (x2 - x1) / 2 * f; set(line, {x1:m - h, x2:m + h, y1:y, y2:y, opacity:f > 0 ? 1 : 0}); };
     animate(t => {
@@ -398,9 +400,9 @@ scenes.push({part:'Part 2', title:'What Changes the Shape?', run(){
   const r1 = txt(58, 40, '', {class:'lbl'}, box), r2 = txt(58, 62, '', {class:'lbl'}, box), r3 = txt(58, 88, '', {class:'lblB'}, box);
   setPanel(`<p>Drag the slider to move the pins. The string loop stays the same.</p>
   <label for="dslider" class="note">Distance between pins (cm)</label>
-  <input type="range" id="dslider" min="0" max="7.5" step="0.1" value="1">
+  <input type="range" id="dslider" min="0" max="7.5" step="0.1" value="${PINS_1}">
   ${Q(5, 'What happens to the shape of an orbit as the two pins (the foci) move closer together?', 'The orbit gets rounder, closer to a circle. The eccentricity gets closer to 0.')}
-  ${Q(6, 'Is the Sun at the center of either orbit? Explain.', 'No. The Sun is at one of the pins (a focus), not at the center. The center is halfway between the two pins. In Orbit 1 the Sun is only half a centimeter off center, so it looks close, but it is still not at the center.')}`);
+  ${Q(6, 'Is the Sun at the center of either orbit? Explain.', `No. The Sun is at one of the pins (a focus), not at the center. The center is halfway between the two pins. In Orbit 1 the Sun is only ${PINS_1 / 2} cm off center, so it looks close, but it is still not at the center.`)}`);
   const sl = $('dslider');
   function draw(d){
     const g = orbitGeom(d);
