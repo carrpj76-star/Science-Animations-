@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Fastest Thing Ever Built</title>
+<style>
+:root{--bg:#0b1220;--panel:#111a2e;--line:#22304d;--text:#e6ebf5;--muted:#93a1bd;--accent:#38bdf8;--accent2:#a78bfa;--sun:#fbbf24;--good:#34d399}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+body{display:flex;flex-direction:column;min-height:100vh}
+header{display:flex;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid var(--line)}
+header .part{font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+header h1{font-size:19px;margin:2px 0 0;font-weight:650}
+.progress{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.progress span{width:11px;height:11px;border-radius:50%;background:var(--line);cursor:pointer}
+.progress span.on{background:var(--accent)}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
+.stage{display:flex;align-items:center;justify-content:center;padding:10px;min-height:0}
+svg#svg{width:100%;height:100%;max-height:calc(100vh - 130px)}
+aside{border-left:1px solid var(--line);background:var(--panel);padding:16px 18px;overflow-y:auto;font-size:15.5px;line-height:1.45;max-height:calc(100vh - 122px)}
+aside h2{font-size:17px;margin:0 0 8px}
+aside h3{font-size:13px;margin:16px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+aside p{margin:0 0 10px}
+aside ul{margin:0 0 10px;padding-left:20px}
+.q{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:12px 0;background:#0e1628}
+.q p{margin:0 0 8px}
+.qn{font-weight:700;color:var(--accent)}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:#1a2540;color:var(--text);padding:6px 12px}
+button:hover{background:#22305a}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--accent);color:#06121f;border-color:var(--accent);font-weight:600}
+button.act{margin:4px 6px 4px 0}
+.reveal{font-size:13.5px;padding:4px 10px}
+.ans{margin-top:8px;padding:8px 10px;border-left:3px solid var(--good);background:#0f2a24;border-radius:4px}
+footer{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid var(--line)}
+footer .grp{display:flex;gap:8px}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:6px 0}
+td,th{border:1px solid var(--line);padding:4px 6px;text-align:left}
+th{color:var(--muted);font-weight:600}
+.formula{background:#0e1628;border:1px solid var(--line);padding:8px 10px;border-radius:6px;font-size:14.5px;margin:0 0 10px}
+input[type=range]{width:100%}
+input[type=number]{font:inherit;width:90px;padding:4px 6px;border-radius:6px;border:1px solid var(--line);background:#0e1628;color:var(--text)}
+.note{color:var(--muted);font-size:13.5px}
+svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.grid line{stroke:#1e2b47;stroke-width:1}
+.axisl{stroke:#64748b;stroke-width:1.5}
+.tick{stroke:#64748b;stroke-width:1.2}
+.tlbl{fill:#7b8aa8;font-size:10.5px}
+.orbit{fill:none;stroke:var(--accent);stroke-width:2.5}
+.orbitB{fill:none;stroke:var(--accent2);stroke-width:2.5}
+.faint{opacity:.35}
+.dash{stroke-dasharray:5 6}
+.string{fill:none;stroke:#fbbf24;stroke-width:1.4}
+.pin{fill:#f87171;stroke:#0b1220;stroke-width:1.5}
+.pencil{fill:#fde68a}
+.lbl{fill:var(--text);font-size:14px}
+.lblS{fill:var(--muted);font-size:12.5px}
+.lblB{fill:var(--text);font-size:18px;font-weight:650}
+.dot{fill:var(--text)}
+.probe{fill:#e2e8f0}
+.trail{fill:none;stroke:#e2e8f0;stroke-width:2;opacity:.45}
+.sweep{stroke:#fbbf24;stroke-width:1.5}
+.halo{paint-order:stroke;stroke:#0b1220;stroke-width:4px;stroke-linejoin:round}
+@media (max-width:900px){main{grid-template-columns:1fr} aside{border-left:none;border-top:1px solid var(--line);max-height:none} svg#svg{max-height:60vh}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="part" id="part"></div><h1 id="title"></h1></div>
+  <div class="progress" id="progress"></div>
+</header>
+<main>
+  <div class="stage"><svg id="svg" viewBox="0 0 800 500" role="img" aria-label="Orbit animation"></svg></div>
+  <aside id="panel"></aside>
+</main>
+<footer>
+  <div class="grp"><button id="prev">Back</button></div>
+  <div class="grp"><button id="pause">Pause</button><button id="replay">Replay</button></div>
+  <div class="grp"><button id="next" class="primary">Next</button></div>
+</footer>
+
+<script>
+/* ===== Settings you can change ===== */
+// Length of the closed string loop, in cm, measured all the way around.
+// Change this to match the string your class uses.
+const LOOP_CM = 16;
+// Pin spacing for Orbit 1 and Orbit 2 (cm), from Part 2 of the worksheet.
+const PINS_1 = 1, PINS_2 = 3;
+
+/* ===== Helpers ===== */
+const NS = 'http://www.w3.org/2000/svg', TAU = Math.PI * 2;
+const svg = document.getElementById('svg'), panel = document.getElementById('panel');
+
+let paused = false, pauseAt = 0, pausedTotal = 0;
+function clock(){ return ((paused ? pauseAt : performance.now()) - pausedTotal) / 1000; }
+const loops = new Set();
+function animate(fn){
+  const t0 = clock(), h = {id:0};
+  const step = () => {
+    if (!loops.has(h)) return;
+    if (fn(clock() - t0) === false){ loops.delete(h); return; }
+    h.id = requestAnimationFrame(step);
+  };
+  loops.add(h); h.id = requestAnimationFrame(step); return h;
+}
+function stopLoop(h){ if (h){ cancelAnimationFrame(h.id); loops.delete(h); } }
+function stopAll(){ loops.forEach(h => cancelAnimationFrame(h.id)); loops.clear(); }
+
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+  (parent || svg).appendChild(e); return e;
+}
+function txt(x, y, s, attrs, parent){ const t = el('text', Object.assign({x, y}, attrs || {}), parent); t.textContent = s; return t; }
+function set(e, attrs){ for (const k in attrs) e.setAttribute(k, attrs[k]); }
+const clamp = v => Math.max(0, Math.min(1, v));
+const f1 = n => (Math.round(n * 10) / 10).toString();
+const f3 = n => n.toFixed(3);
+
+function clear(){
+  svg.innerHTML = '';
+  const d = el('defs'), g = el('radialGradient', {id:'sunG'}, d);
+  el('stop', {offset:'0%', 'stop-color':'#fff7d6'}, g);
+  el('stop', {offset:'40%', 'stop-color':'#fbbf24', 'stop-opacity':'0.8'}, g);
+  el('stop', {offset:'100%', 'stop-color':'#f59e0b', 'stop-opacity':'0'}, g);
+}
+function sun(x, y, r, label){
+  const g = el('g');
+  el('circle', {cx:x, cy:y, r:r * 2, fill:'url(#sunG)', opacity:.6}, g);
+  el('circle', {cx:x, cy:y, r:r, fill:'#fbbf24'}, g);
+  if (label) txt(x, y + r + 16, label, {class:'lblS', 'text-anchor':'middle'}, g);
+  return g;
+}
+function pin(x, y, style){ return el('circle', {cx:x, cy:y, r:5, class:'pin', style:style || ''}); }
+
+// Kepler's equation: where an object is after a given fraction of its orbit
+function solveE(M, e){
+  M = ((M % TAU) + TAU) % TAU;
+  let E = e < 0.8 ? M : Math.PI;
+  for (let i = 0; i < 40; i++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+  return E;
+}
+function kpos(frac, e, a, b){
+  const E = solveE(TAU * frac, e);
+  return {x:a * (Math.cos(E) - e), y:b * Math.sin(E), r:a * (1 - e * Math.cos(E)), E};
+}
+
+// Panel helpers
+function setPanel(html){
+  panel.innerHTML = html; panel.scrollTop = 0;
+  panel.querySelectorAll('.reveal').forEach(b => {
+    b.onclick = () => { const a = b.nextElementSibling; a.hidden = !a.hidden; b.textContent = a.hidden ? 'Show answer' : 'Hide answer'; };
+  });
+}
+function Q(n, text, ans){
+  return `<div class="q"><p><span class="qn">${n}.</span> ${text}</p><button class="reveal">Show answer</button><div class="ans" hidden>${ans}</div></div>`;
+}
+const $ = id => document.getElementById(id);
+
+/* ===== Graph paper sheet (Part 2) ===== */
+const S = 30, OX = 400, OY = 250;
+function orbitGeom(d){ const a = (LOOP_CM - d) / 2, c = d / 2; return {a, c, d, b:Math.sqrt(a * a - c * c), major:LOOP_CM - d, e:d / (LOOP_CM - d)}; }
+function sheet(){
+  const g = el('g', {class:'grid'});
+  for (let i = -12; i <= 12; i++) el('line', {x1:OX + i * S, y1:OY - 8 * S, x2:OX + i * S, y2:OY + 8 * S}, g);
+  for (let j = -8; j <= 8; j++) el('line', {x1:OX - 12 * S, y1:OY + j * S, x2:OX + 12 * S, y2:OY + j * S}, g);
+  el('line', {x1:OX - 12 * S, y1:OY, x2:OX + 12 * S, y2:OY, class:'axisl'});
+  for (let i = 1; i <= 12; i++) for (const sg of [-1, 1]){
+    const x = OX + sg * i * S;
+    el('line', {x1:x, y1:OY - 5, x2:x, y2:OY + 5, class:'tick'});
+    txt(x, OY + 17, String(i), {class:'tlbl', 'text-anchor':'middle'});
+  }
+  el('line', {x1:OX, y1:OY - 10, x2:OX, y2:OY + 10, class:'axisl'});
+  el('line', {x1:OX - 10, y1:OY, x2:OX + 10, y2:OY, class:'axisl'});
+  txt(OX, OY - 14, 'CENTER', {class:'tlbl', 'text-anchor':'middle'});
+}
+function ellipsePath(a, b, frac){
+  const n = Math.max(2, Math.ceil(240 * frac)); let d = '';
+  for (let k = 0; k <= n; k++){
+    const E = TAU * frac * k / n;
+    d += (k ? 'L' : 'M') + (OX + a * S * Math.cos(E)).toFixed(1) + ' ' + (OY - b * S * Math.sin(E)).toFixed(1);
+  }
+  return d;
+}
+function trace(g, cls, dur, onDone){
+  const path = el('path', {class:cls});
+  const str = el('polyline', {class:'string'});
+  pin(OX - g.c * S, OY); pin(OX + g.c * S, OY);
+  const pen = el('circle', {r:5, class:'pencil'});
+  animate(t => {
+    const f = Math.min(t / dur, 1);
+    path.setAttribute('d', ellipsePath(g.a, g.b, f));
+    const E = TAU * f, x = OX + g.a * S * Math.cos(E), y = OY - g.b * S * Math.sin(E);
+    str.setAttribute('points', `${OX - g.c * S},${OY} ${x},${y} ${OX + g.c * S},${OY} ${OX - g.c * S},${OY}`);
+    set(pen, {cx:x, cy:y});
+    if (f >= 1){ str.remove(); pen.remove(); if (onDone) onDone(); return false; }
+  });
+}
+function labelOrbit(g){
+  const sx = OX + g.c * S, rx = OX + g.a * S, lx = OX - g.a * S;
+  el('circle', {cx:sx, cy:OY, r:9, fill:'none', stroke:'#fbbf24', 'stroke-width':2});
+  txt(sx + 4, OY + 38, 'SUN', {class:'lbl halo', 'text-anchor':'middle', style:'fill:#fbbf24;font-weight:700'});
+  el('circle', {cx:rx, cy:OY, r:5, fill:'#34d399'});
+  el('circle', {cx:lx, cy:OY, r:5, fill:'#34d399'});
+  txt(rx + 10, OY - 10, 'CLOSEST', {class:'lbl halo', style:'font-weight:700'});
+  txt(lx - 10, OY - 10, 'FARTHEST', {class:'lbl halo', 'text-anchor':'end', style:'font-weight:700'});
+}
+
+/* ===== Equal-area diagram (Part 3) ===== */
+const EA = {a:8, b:6.4, e:0.6, s:26, sunX:520, cy:250};
+function eaXY(E){ return [EA.sunX + EA.a * (Math.cos(E) - EA.e) * EA.s, EA.cy - EA.b * Math.sin(E) * EA.s]; }
+function eaE(k){ return solveE(TAU * k / 12, EA.e); }
+function eaBase(){
+  const {s, sunX, cy} = EA, g = el('g', {class:'grid'});
+  for (let i = -14; i <= 4; i++) el('line', {x1:sunX + i * s, y1:cy - 8 * s, x2:sunX + i * s, y2:cy + 8 * s}, g);
+  for (let j = -8; j <= 8; j++) el('line', {x1:sunX - 14 * s, y1:cy + j * s, x2:sunX + 4 * s, y2:cy + j * s}, g);
+  el('ellipse', {cx:sunX - EA.a * EA.e * s, cy, rx:EA.a * s, ry:EA.b * s, class:'orbit'});
+}
+function eaSun(){ sun(EA.sunX, EA.cy, 8); txt(EA.sunX, EA.cy + 28, 'SUN', {class:'lblS halo', 'text-anchor':'middle'}); }
+function eaDot(k, parent){
+  const [x, y] = eaXY(eaE(k)), cx = EA.sunX - EA.a * EA.e * EA.s;
+  const dx = x - cx, dy = y - EA.cy, L = Math.hypot(dx, dy);
+  el('circle', {cx:x, cy:y, r:4.5, class:'dot'}, parent);
+  txt(x + dx / L * 17, y + dy / L * 17 + 5, String(k + 1), {class:'lbl', 'text-anchor':'middle', style:'font-weight:650'}, parent);
+}
+function slicePoly(E1, E2, f){
+  const pts = [[EA.sunX, EA.cy]], n = 50;
+  for (let k = 0; k <= n; k++) pts.push(eaXY(E1 + (E2 - E1) * f * k / n));
+  return pts;
+}
+function inPoly(x, y, p){
+  let inside = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++){
+    const [xi, yi] = p[i], [xj, yj] = p[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function countSquares(poly){
+  const out = [], {s, sunX, cy} = EA;
+  for (let i = -14; i < 4; i++) for (let j = -8; j < 8; j++){
+    let hit = 0;
+    for (let u = 0; u < 10; u++) for (let v = 0; v < 10; v++)
+      if (inPoly(sunX + (i + (u + .5) / 10) * s, cy + (j + (v + .5) / 10) * s, poly)) hit++;
+    if (hit >= 50) out.push([i, j]);
+  }
+  return out;
+}
+const ptsStr = p => p.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+
+/* ===== Scenes ===== */
+const scenes = [];
+
+// 0. Title
+scenes.push({part:'Earth and Space Science', title:'The Fastest Thing Ever Built', run(){
+  const cx = 400, cy = 300, a = 250, e = 0.7, b = a * Math.sqrt(1 - e * e), sunX = cx - a * e;
+  txt(400, 62, 'The Fastest Thing Ever Built', {class:'lblB', 'text-anchor':'middle', style:'font-size:28px'});
+  txt(400, 92, 'How objects move in their orbits around the Sun', {class:'lblS', 'text-anchor':'middle', style:'font-size:15px'});
+  el('ellipse', {cx, cy, rx:a, ry:b, class:'orbit faint dash'});
+  sun(sunX, cy, 24);
+  const trail = el('polyline', {class:'trail'}), obj = el('circle', {r:7, class:'probe'}), pts = [];
+  animate(t => {
+    const p = kpos(t / 8, e, a, b), x = sunX - p.x, y = cy - p.y;
+    set(obj, {cx:x, cy:y});
+    pts.push(x.toFixed(1) + ',' + y.toFixed(1)); if (pts.length > 40) pts.shift();
+    trail.setAttribute('points', pts.join(' '));
+  });
+  setPanel(`<h2>Learning target</h2>
+  <p>We are learning how objects move in their orbits around the Sun so that we can predict how fast an object travels and how long its year will be.</p>
+  <h3>Success criteria</h3>
+  <ul><li>I can describe an orbit as an ellipse with the Sun at one focus.</li>
+  <li>I can use evidence to explain why an object moves fastest when it is closest to the Sun.</li>
+  <li>I can use distance data to predict the length of a planet's year.</li></ul>
+  <h3>How to use this</h3>
+  <p>Click <b>Next</b> to move through each part of your worksheet. Answer each question on your paper first. Then click <b>Show answer</b> to check yourself.</p>`);
+}});
+
+// 1. Parker puzzle
+scenes.push({part:'Part 1', title:'The Puzzle', run(){
+  const sunX = 170, cy = 255, a = 320, e = 0.86, b = a * Math.sqrt(1 - e * e), cx = sunX + a * e;
+  el('ellipse', {cx, cy, rx:a, ry:b, class:'orbit faint dash'});
+  sun(sunX, cy, 20); txt(sunX, cy + 52, 'SUN', {class:'lblS', 'text-anchor':'middle'});
+  const trail = el('polyline', {class:'trail'}), probe = el('circle', {r:6, class:'probe'});
+  const tag = txt(0, 0, 'Parker Solar Probe', {class:'lblS halo'});
+  const meter = el('g', {opacity:0});
+  el('rect', {x:470, y:20, width:300, height:70, rx:8, fill:'#0e1628', stroke:'#22304d'}, meter);
+  txt(486, 44, 'SPEED', {class:'lblS'}, meter);
+  const spd = txt(486, 74, '', {class:'lblB'}, meter);
+  el('rect', {x:640, y:60, width:116, height:10, rx:5, fill:'#1e2b47'}, meter);
+  const bar = el('rect', {x:640, y:60, width:0, height:10, rx:5, fill:'#fbbf24'}, meter);
+  const rp = a * (1 - e), vMax = Math.sqrt(2 / rp - 1 / a), pts = [];
+  animate(t => {
+    const p = kpos(t / 9 + 0.5, e, a, b), x = sunX - p.x, y = cy - p.y;
+    set(probe, {cx:x, cy:y}); set(tag, x > 600 ? {x:x - 10, y:y - 12, 'text-anchor':'end'} : {x:x + 10, y:y - 10, 'text-anchor':'start'});
+    pts.push(x.toFixed(1) + ',' + y.toFixed(1)); if (pts.length > 45) pts.shift();
+    trail.setAttribute('points', pts.join(' '));
+    const v = Math.sqrt(2 / p.r - 1 / a) / vMax * 430000;
+    spd.textContent = (Math.round(v / 1000) * 1000).toLocaleString() + ' mph';
+    set(bar, {width:116 * v / 430000});
+  });
+  setPanel(`<p>On December 24, 2024, NASA's Parker Solar Probe flew just 3.8 million miles above the surface of the Sun at 430,000 miles per hour. That is faster than any human-made object has ever moved.</p>
+  <p>It did not get that fast by firing a giant engine. It got that fast by falling.</p>
+  <p class="note">Watch the probe go around its orbit. Answer 1 and 2 on your sheet before you turn on the speed readout.</p>
+  ${Q(1, 'Parker reached 430,000 mph without a giant engine. What do you think caused it to move so fast?', 'The Sun\'s gravity. Parker falls toward the Sun, and gravity speeds it up the whole way in, the same way a dropped ball speeds up as it falls. (NASA used flybys of Venus to shrink Parker\'s orbit so it falls closer to the Sun each time.)')}
+  ${Q(2, 'Parker\'s orbit is a stretched-out oval. Where in its orbit do you predict it moves fastest?', 'Closest to the Sun. Hold on to your prediction. You will prove it with evidence in Part 3.')}
+  <button class="act" id="btnSpeed">Show the speed readout</button>
+  <p class="note">Speeds in the readout are scaled from Parker's real top speed.</p>`);
+  $('btnSpeed').onclick = () => meter.setAttribute('opacity', 1);
+}});
+
+// 2. Draw Orbit 1
+scenes.push({part:'Part 2', title:'Draw an Orbit: Orbit 1', run(){
+  sheet();
+  const g1 = orbitGeom(PINS_1);
+  trace(g1, 'orbit', 6, () => labelOrbit(g1));
+  setPanel(`<p><b>a.</b> Lay the graph paper on the cardboard. Push two pins into the middle of the paper, <b>${PINS_1} cm apart</b>. Center them on the + mark, so each pin is <b>${PINS_1 / 2} cm</b> from the center.</p>
+  <p><b>b.</b> Put the string loop around both pins. Pull it tight with your pencil and trace all the way around. This is <b>Orbit 1</b>.</p>
+  <p><b>d.</b> Label one pin hole <b>SUN</b>. Write <b>CLOSEST</b> at the point on the orbit nearest the Sun and <b>FARTHEST</b> at the point farthest away.</p>
+  <p class="note">Keep the string tight and the pencil straight up. This animation uses a ${LOOP_CM} cm string loop, so your orbit may be a little bigger or smaller.</p>`);
+}});
+
+// 3. Draw Orbit 2
+scenes.push({part:'Part 2', title:'Draw an Orbit: Orbit 2', run(){
+  sheet();
+  const g1 = orbitGeom(PINS_1), g2 = orbitGeom(PINS_2);
+  el('path', {class:'orbit faint', d:ellipsePath(g1.a, g1.b, 1)});
+  txt(OX, OY - g1.b * S - 5, 'Orbit 1', {class:'lblS halo', 'text-anchor':'middle'});
+  const pL = pin(OX - g1.c * S, OY), pR = pin(OX + g1.c * S, OY);
+  animate(t => {
+    const f = clamp((t - 0.5) / 1.2), c = g1.c + (g2.c - g1.c) * f;
+    set(pL, {cx:OX - c * S}); set(pR, {cx:OX + c * S});
+    if (f >= 1){
+      pL.remove(); pR.remove();
+      trace(g2, 'orbitB', 6, () => txt(OX, OY - g2.b * S - 6, 'Orbit 2', {class:'lblS halo', 'text-anchor':'middle', style:'fill:#a78bfa'}));
+      return false;
+    }
+  });
+  setPanel(`<p><b>c.</b> Move the pins to <b>${PINS_2} cm apart</b>, centered in the same spot. Each pin is now <b>${PINS_2 / 2} cm</b> from the center. Trace again. This is <b>Orbit 2</b>.</p>
+  ${Q(3, 'Which orbit is more stretched out (more eccentric)?', 'Orbit 2. Its pins are farther apart, so the orbit is more stretched out.')}`);
+}});
+
+// 4. Eccentricity
+scenes.push({part:'Part 2', title:'Calculate Eccentricity', run(){
+  sheet();
+  const G = [orbitGeom(PINS_1), orbitGeom(PINS_2)], cols = ['#fbbf24', '#a78bfa'];
+  el('path', {class:'orbit', d:ellipsePath(G[0].a, G[0].b, 1)});
+  el('path', {class:'orbitB', d:ellipsePath(G[1].a, G[1].b, 1)});
+  G.forEach((g, i) => { pin(OX - g.c * S, OY, i ? 'fill:#a78bfa' : ''); pin(OX + g.c * S, OY, i ? 'fill:#a78bfa' : ''); });
+  txt(OX, OY - G[0].b * S - 5, 'Orbit 1', {class:'lblS halo', 'text-anchor':'middle'});
+  txt(OX, OY - G[1].b * S + 16, 'Orbit 2', {class:'lblS halo', 'text-anchor':'middle', style:'fill:#a78bfa'});
+  let done = false;
+  function measure(){
+    if (done) return; done = true;
+    const items = G.map((g, i) => {
+      const grp = el('g');
+      return {g, grp, ts:i * 4.2,
+        fl:el('line', {stroke:'#f87171', 'stroke-width':5, 'stroke-linecap':'round', opacity:0}, grp),
+        ft:txt(OX, OY + 50, '', {class:'lbl halo', 'text-anchor':'middle', style:'fill:#f87171;font-weight:650'}, grp),
+        ml:el('line', {stroke:cols[i], 'stroke-width':4, 'stroke-linecap':'round', opacity:0}, grp),
+        mt:txt(OX - g.a * S * 0.5, OY - 12, '', {class:'lbl halo', 'text-anchor':'middle', style:`fill:${cols[i]};font-weight:650`}, grp)};
+    });
+    const grow = (line, x1, x2, y, f) => { const m = (x1 + x2) / 2, h = (x2 - x1) / 2 * f; set(line, {x1:m - h, x2:m + h, y1:y, y2:y, opacity:f > 0 ? 1 : 0}); };
+    animate(t => {
+      items.forEach((it, i) => {
+        const lt = t - it.ts;
+        grow(it.fl, OX - it.g.c * S, OX + it.g.c * S, OY + 30, clamp(lt / 0.8));
+        it.ft.textContent = lt > 0.8 ? `Orbit ${i + 1}: pins ${f1(it.g.d)} cm apart` : '';
+        grow(it.ml, OX - it.g.a * S, OX + it.g.a * S, OY, clamp((lt - 1.1) / 1.5));
+        it.mt.textContent = lt > 2.6 ? `major axis ${f1(it.g.major)} cm` : '';
+      });
+      items[0].grp.setAttribute('opacity', t > 3.8 ? Math.max(0, 1 - (t - 3.8) / 0.4) : 1);
+      if (t > 7){
+        $('meas').innerHTML = `<table><tr><th></th><th>Distance between foci</th><th>Major axis</th></tr>
+          <tr><td>Orbit 1</td><td>${f1(G[0].d)} cm</td><td>${f1(G[0].major)} cm</td></tr>
+          <tr><td>Orbit 2</td><td>${f1(G[1].d)} cm</td><td>${f1(G[1].major)} cm</td></tr></table>`;
+        return false;
+      }
+    });
+  }
+  setPanel(`<div class="formula">Eccentricity = distance between foci (cm) &divide; length of major axis (cm)</div>
+  <p>The <b>foci</b> are your two pins. The <b>major axis</b> is the longest distance across the orbit, measured along the line through both pins.</p>
+  <button class="act" id="btnMeas">Show the measurements</button>
+  <div id="meas"></div>
+  ${Q(4, 'Calculate the eccentricity of Orbit 1 and Orbit 2.', `Orbit 1: ${f1(G[0].d)} &divide; ${f1(G[0].major)} = <b>${f3(G[0].e)}</b><br>Orbit 2: ${f1(G[1].d)} &divide; ${f1(G[1].major)} = <b>${f3(G[1].e)}</b><br><span class="note">Round to the thousandths place. If your string loop is a different size, your major axis will be different, so use your own measurement.</span>`)}
+  <p class="note">Eccentricity describes the shape of an orbit. It ranges from 0.000 (a circle) to 1.000 (a straight line).</p>`);
+  $('btnMeas').onclick = measure;
+}});
+
+// 5. Explore pin distance
+scenes.push({part:'Part 2', title:'What Changes the Shape?', run(){
+  sheet();
+  const path = el('path', {class:'orbit'});
+  const pL = pin(OX, OY), pR = pin(OX, OY);
+  const box = el('g');
+  el('rect', {x:46, y:16, width:210, height:86, rx:6, fill:'#0b1220', stroke:'#22304d', opacity:.94}, box);
+  const r1 = txt(58, 40, '', {class:'lbl'}, box), r2 = txt(58, 62, '', {class:'lbl'}, box), r3 = txt(58, 88, '', {class:'lblB'}, box);
+  setPanel(`<p>Drag the slider to move the pins. The string loop stays the same.</p>
+  <label for="dslider" class="note">Distance between pins (cm)</label>
+  <input type="range" id="dslider" min="0" max="7.5" step="0.1" value="1">
+  ${Q(5, 'What happens to the shape of an orbit as the two pins (the foci) move closer together?', 'The orbit gets rounder, closer to a circle. The eccentricity gets closer to 0.')}
+  ${Q(6, 'Is the Sun at the center of either orbit? Explain.', 'No. The Sun is at one of the pins (a focus), not at the center. The center is halfway between the two pins. In Orbit 1 the Sun is only half a centimeter off center, so it looks close, but it is still not at the center.')}`);
+  const sl = $('dslider');
+  function draw(d){
+    const g = orbitGeom(d);
+    path.setAttribute('d', ellipsePath(g.a, g.b, 1));
+    set(pL, {cx:OX - g.c * S}); set(pR, {cx:OX + g.c * S});
+    r1.textContent = `Pins apart: ${d.toFixed(1)} cm`;
+    r2.textContent = `Major axis: ${g.major.toFixed(1)} cm`;
+    r3.textContent = `Eccentricity: ${g.e.toFixed(3)}`;
+  }
+  const auto = animate(t => { const d = 3.75 - 3.75 * Math.cos(t * 0.6); draw(d); sl.value = d; });
+  sl.oninput = () => { stopLoop(auto); draw(+sl.value); };
+}});
+
+// 6. Equal time, unequal distance
+scenes.push({part:'Part 3', title:'Equal Slices, Unequal Speeds', run(){
+  eaBase();
+  const dots = el('g'), line = el('line', {class:'sweep'});
+  eaSun();
+  const obj = el('circle', {r:7, class:'probe'});
+  const info = el('g');
+  el('rect', {x:160, y:430, width:210, height:24, rx:5, fill:'#0b1220', stroke:'#22304d'}, info);
+  const lab = txt(170, 447, '', {class:'lblS'}, info);
+  let dropped = 0; const T = 12;
+  animate(t => {
+    const p = kpos(t / T, EA.e, EA.a, EA.b), x = EA.sunX + p.x * EA.s, y = EA.cy - p.y * EA.s;
+    set(obj, {cx:x, cy:y}); set(line, {x1:EA.sunX, y1:EA.cy, x2:x, y2:y});
+    while (dropped < 12 && t >= dropped * T / 12){ eaDot(dropped, dots); dropped++; }
+    const k = Math.floor((t % T) / (T / 12));
+    lab.textContent = `Moving from dot ${k + 1} to dot ${(k + 1) % 12 + 1}`;
+  });
+  setPanel(`<p>Kepler discovered that a line from the Sun to a planet sweeps out <b>equal areas in equal amounts of time</b>. Let's see what that means for speed.</p>
+  <p>This object takes the <b>same amount of time</b> to move from one numbered dot to the next. Watch where the dots land.</p>
+  ${Q(7, 'Where are the dots far apart, and where are they close together?', 'Far apart near the Sun (around dots 12, 1, and 2). Close together on the far side of the orbit (around dots 6, 7, and 8).')}
+  ${Q(8, 'Where does an object travel a greater distance in the same amount of time: closer to the Sun or farther from the Sun? Explain.', 'Closer to the Sun. The dots are farther apart there, so the object covers more distance in the same amount of time. More distance in the same time means it is moving faster.')}`);
+}});
+
+// 7. Shade the slices
+scenes.push({part:'Part 3', title:'Shade and Count the Slices', run(){
+  eaBase();
+  const dots = el('g'); for (let k = 0; k < 12; k++) eaDot(k, dots);
+  const SL = [
+    {E1:0, E2:eaE(1), dots:[0, 1], fill:'rgba(251,191,36,.38)', col:'#fbbf24', name:'Sun, dot 1, dot 2'},
+    {E1:eaE(6), E2:eaE(7), dots:[6, 7], fill:'rgba(167,139,250,.42)', col:'#a78bfa', name:'Sun, dot 7, dot 8'}];
+  SL.forEach(s => { s.sq = countSquares(slicePoly(s.E1, s.E2, 1)); });
+  const layer = el('g');
+  eaSun();
+  let done = false;
+  function play(){
+    if (done) return; done = true;
+    SL.forEach((s, i) => {
+      const ts = i * 2.6;
+      s.lines = s.dots.map(k => el('line', {x1:EA.sunX, y1:EA.cy, x2:EA.sunX, y2:EA.cy, stroke:s.col, 'stroke-width':2}, layer));
+      s.poly = el('polygon', {fill:s.fill, points:''}, layer);
+      s.ts = ts;
+    });
+    const sqG = el('g', {opacity:0}, layer), lblG = el('g', {opacity:0}, layer);
+    SL.forEach(s => {
+      s.sq.forEach(([i, j]) => el('rect', {x:EA.sunX + i * EA.s + 1.5, y:EA.cy + j * EA.s + 1.5, width:EA.s - 3, height:EA.s - 3, fill:'none', stroke:s.col, 'stroke-width':1.5}, sqG));
+      const [ax, ay] = eaXY(s.E1), [bx, by] = eaXY(s.E2);
+      txt((EA.sunX + ax + bx) / 3 + (s === SL[0] ? 8 : 18), (EA.cy + ay + by) / 3 + 6, `${s.sq.length} squares`, {class:'lbl halo', 'text-anchor':'middle', style:`fill:${s.col};font-weight:700`}, lblG);
+    });
+    animate(t => {
+      SL.forEach(s => {
+        const lt = t - s.ts, fl = clamp(lt / 0.9);
+        s.lines.forEach((ln, n) => { const [x, y] = eaXY(n ? s.E2 : s.E1); set(ln, {x2:EA.sunX + (x - EA.sunX) * fl, y2:EA.cy + (y - EA.cy) * fl}); });
+        const ff = clamp((lt - 1) / 1.3);
+        s.poly.setAttribute('points', ff > 0 ? ptsStr(slicePoly(s.E1, s.E2, ff)) : '');
+      });
+      sqG.setAttribute('opacity', clamp((t - 5.6) / 0.8));
+      lblG.setAttribute('opacity', clamp((t - 6.4) / 0.6));
+      if (t > 7.2) return false;
+    });
+  }
+  setPanel(`<p><b>9.</b> Connect the Sun to dots 1, 2, 7, and 8 using straight lines. Shade the slice from the Sun to dot 1 and dot 2 in one color. Shade the slice from the Sun to dot 7 and dot 8 in another color. Count the squares in each slice. Count a square if at least half of it is shaded.</p>
+  <button class="act" id="btnSl">Draw and shade the slices</button>
+  ${Q('9', 'How many squares are in each slice?', `<table><tr><th>Slice</th><th>Squares</th></tr><tr><td>${SL[0].name}</td><td>about ${SL[0].sq.length}</td></tr><tr><td>${SL[1].name}</td><td>about ${SL[1].sq.length}</td></tr></table><span class="note">Your counts may be off by a square or two depending on how you shade.</span>`)}
+  ${Q('9a', 'What do you notice about the two areas?', 'They are about the same. The object took the same amount of time to make each slice, so the slices have equal areas.')}
+  ${Q('9b', 'Go back to your prediction in Question 2. Were you right? Use your slices as evidence.', 'The object moves fastest closest to the Sun. Both slices took the same time and have the same area. The slice near the Sun is short and wide, so the object traveled a much longer path along the orbit in that time. The slice far from the Sun is long and thin, so the object only moved a short distance.')}`);
+  $('btnSl').onclick = play;
+}});
+
+// 8. Planets orbiting
+const PLANETS = [['Mercury',57.9,'88.0 days',0.241,'#a8a29e',4],['Venus',108.2,'224.7 days',0.615,'#fcd34d',6],['Earth',149.6,'365.26 days (1 year)',1,'#38bdf8',6],['Mars',228.0,'1.9 years',1.881,'#f87171',5],['Jupiter',778.5,'11.9 years',11.9],['Saturn',1432.0,'29.4 years',29.4],['Uranus',2867.0,'84.0 years',84],['Neptune',4515.0,'164.8 years',164.8]];
+scenes.push({part:'Part 4', title:'Find the Pattern', run(){
+  const cx = 400, cy = 250, AU = 150, inner = PLANETS.slice(0, 4);
+  inner.forEach(p => el('circle', {cx, cy, r:p[1] / 149.6 * AU, fill:'none', stroke:'#22304d', 'stroke-width':1.2}));
+  sun(cx, cy, 14);
+  const bodies = inner.map(p => ({p, c:el('circle', {r:p[5], fill:p[4]}), t:txt(0, 0, p[0], {class:'lblS halo'})}));
+  const box = el('g');
+  el('rect', {x:14, y:14, width:170, height:120, rx:6, fill:'#0b1220', stroke:'#22304d'}, box);
+  const yr = txt(26, 38, '', {class:'lbl', style:'font-weight:650'}, box);
+  const laps = inner.map((p, i) => txt(26, 62 + i * 19, '', {class:'lblS'}, box));
+  txt(400, 488, 'Jupiter, Saturn, Uranus, and Neptune are too far out to fit on this screen.', {class:'lblS', 'text-anchor':'middle'});
+  animate(t => {
+    const years = t / 5;
+    yr.textContent = `Earth years: ${years.toFixed(1)}`;
+    bodies.forEach((b, i) => {
+      const ang = TAU * years / b.p[3] + i, r = b.p[1] / 149.6 * AU;
+      const x = cx + r * Math.cos(ang), y = cy - r * Math.sin(ang);
+      set(b.c, {cx:x, cy:y}); set(b.t, {x:x + 9, y:y - 9});
+      laps[i].textContent = `${b.p[0]}: ${Math.floor(years / b.p[3])} trips`;
+    });
+  });
+  const rows = PLANETS.map(p => `<tr><td>${p[0]}</td><td>${p[1].toFixed(1)}</td><td>${p[2]}</td></tr>`).join('');
+  setPanel(`<table><tr><th>Planet</th><th>Mean distance (million km)</th><th>One "year"</th></tr>${rows}</table>
+  <p class="note">Data: ESRT Solar System Objects Data Table</p>
+  ${Q(10, 'What pattern do you see between distance from the Sun and the length of a year?', 'The farther a planet is from the Sun, the longer its year.')}`);
+}});
+
+// 9. Graph, Jupiter, Ceres
+scenes.push({part:'Part 4', title:'Graph the Pattern', run(){
+  const X0 = 90, X1 = 740, Y0 = 430, Y1 = 40, XM = 1500, YM = 32;
+  const gx = d => X0 + (X1 - X0) * d / XM, gy = T => Y0 - (Y0 - Y1) * T / YM, law = d => Math.pow(d / 149.6, 1.5);
+  const g = el('g', {class:'grid'});
+  for (let d = 250; d <= 1500; d += 250){ el('line', {x1:gx(d), y1:Y0, x2:gx(d), y2:Y1}, g); txt(gx(d), Y0 + 18, String(d), {class:'tlbl', 'text-anchor':'middle'}); }
+  for (let T = 5; T <= 30; T += 5){ el('line', {x1:X0, y1:gy(T), x2:X1, y2:gy(T)}, g); txt(X0 - 8, gy(T) + 4, String(T), {class:'tlbl', 'text-anchor':'end'}); }
+  el('line', {x1:X0, y1:Y0, x2:X1, y2:Y0, class:'axisl'}); el('line', {x1:X0, y1:Y0, x2:X0, y2:Y1, class:'axisl'});
+  txt(X0 - 8, Y0 + 4, '0', {class:'tlbl', 'text-anchor':'end'});
+  txt((X0 + X1) / 2, Y0 + 44, 'Mean distance from Sun (million km)', {class:'lblS', 'text-anchor':'middle'});
+  txt(0, 0, 'Length of year (Earth years)', {class:'lblS', 'text-anchor':'middle', transform:`translate(38,${(Y0 + Y1) / 2}) rotate(-90)`});
+  txt(X0 + 12, Y1 + 18, 'Not shown: Uranus (2867, 84.0 years)', {class:'lblS'});
+  txt(X0 + 12, Y1 + 36, 'and Neptune (4515, 164.8 years)', {class:'lblS'});
+  let cd = ''; for (let k = 0; k <= 150; k++){ const d = XM * k / 150; cd += (k ? 'L' : 'M') + gx(d).toFixed(1) + ' ' + gy(law(d)).toFixed(1); }
+  const curve = el('path', {d:cd, fill:'none', stroke:'#38bdf8', 'stroke-width':2, 'stroke-dasharray':'6 5', opacity:0});
+  const data = PLANETS.slice(0, 6);
+  const dots = data.map(p => el('circle', {cx:gx(p[1]), cy:gy(p[3]), r:0, fill:p[4] || '#e6ebf5'}));
+  const labs = el('g', {opacity:0});
+  txt(gx(778.5) + 10, gy(11.9) - 6, 'Jupiter', {class:'lbl halo'}, labs);
+  txt(gx(1432) - 10, gy(29.4) + 4, 'Saturn', {class:'lbl halo', 'text-anchor':'end'}, labs);
+  el('line', {x1:gx(240), y1:gy(1.2), x2:gx(550), y2:gy(1.5), stroke:'#64748b'}, labs);
+  txt(gx(555), gy(1.5) + 4, 'Mercury, Venus, Earth, Mars', {class:'lblS halo'}, labs);
+  animate(t => {
+    dots.forEach((d, i) => d.setAttribute('r', 5 * clamp((t - 0.4 * i) / 0.3)));
+    labs.setAttribute('opacity', clamp((t - 2.4) / 0.5));
+    curve.setAttribute('opacity', 0.8 * clamp((t - 3) / 0.8));
+    if (t > 4) return false;
+  });
+  let cmpDone = false, ceresDone = false;
+  function compare(){
+    if (cmpDone) return; cmpDone = true;
+    const c = el('g');
+    el('line', {x1:gx(0), y1:gy(0), x2:gx(1500), y2:gy(1500 / 149.6), stroke:'#94a3b8', 'stroke-dasharray':'3 5', 'stroke-width':1.5}, c);
+    txt(gx(1500) - 4, gy(1500 / 149.6) + 18, 'if the year grew at the same rate as distance', {class:'lblS halo', 'text-anchor':'end'}, c);
+    el('circle', {cx:gx(778.5), cy:gy(778.5 / 149.6), r:5, fill:'none', stroke:'#94a3b8', 'stroke-width':2}, c);
+    txt(gx(778.5) + 10, gy(778.5 / 149.6) + 18, '5.2 years', {class:'lblS halo'}, c);
+    el('line', {x1:gx(778.5), y1:gy(778.5 / 149.6) - 6, x2:gx(778.5), y2:gy(11.9) + 7, stroke:'#fbbf24', 'stroke-width':2}, c);
+    txt(gx(778.5) - 10, gy(8.6), 'real year: 11.9', {class:'lbl halo', 'text-anchor':'end', style:'fill:#fbbf24;font-weight:650'}, c);
+  }
+  function ceres(){
+    if (ceresDone) return; ceresDone = true;
+    const d = 414, T = law(d), c = el('g');
+    el('line', {x1:gx(d), y1:Y0, x2:gx(d), y2:gy(T), stroke:'#34d399', 'stroke-dasharray':'4 4', 'stroke-width':1.5}, c);
+    el('line', {x1:X0, y1:gy(T), x2:gx(d), y2:gy(T), stroke:'#34d399', 'stroke-dasharray':'4 4', 'stroke-width':1.5}, c);
+    el('circle', {cx:gx(d), cy:gy(T), r:6, fill:'#34d399'}, c);
+    txt(gx(d) - 12, gy(T) - 12, `Ceres: about ${T.toFixed(1)} years`, {class:'lbl halo', style:'fill:#34d399;font-weight:650'}, c);
+  }
+  setPanel(`<p>Each dot is one planet. The dashed curve follows the pattern.</p>
+  ${Q(11, 'Jupiter is about 5 times farther from the Sun than Earth. Is its year 5 times longer? What does that tell you?', 'No. Jupiter is about 5.2 times farther, but its year is about 12 times longer (11.9 years). The year grows faster than the distance. A planet farther out has a longer path to travel and it moves slower.')}
+  <button class="act" id="btnCmp">Compare Earth and Jupiter</button>
+  ${Q(12, 'Predict: Ceres is 414 million km from the Sun. About how long is its year? Explain how you decided.', 'Between Mars (1.9 years) and Jupiter (11.9 years), and closer to Mars, because 414 is much closer to 228 than to 778.5. The pattern puts it at about 4 to 5 years. Actual: about 4.6 years.')}
+  <button class="act" id="btnCeres">Add Ceres to the graph</button>
+  ${Q(13, 'Parker Solar Probe now circles the Sun about once every 3 months, close to Mercury\'s year. Use the pattern to explain why its year is so short.', 'Parker stays very close to the Sun, about as close as Mercury on average. Close to the Sun means a short path and fast speed, so it finishes a trip around the Sun quickly.')}`);
+  $('btnCmp').onclick = compare; $('btnCeres').onclick = ceres;
+}});
+
+// 10. Goldilocks zone
+scenes.push({part:'Part 5', title:'The Goldilocks Zone', run(){
+  const SX = 40, CY = 210, AU = 300, hz = [0.85, 1.6];
+  const rings = el('g');
+  const rs = [0, 1, 2, 3].map(() => el('circle', {cx:SX, cy:CY, r:0, fill:'none', stroke:'#fbbf24', 'stroke-width':2}, rings));
+  el('rect', {x:SX + hz[0] * AU, y:36, width:(hz[1] - hz[0]) * AU, height:250, fill:'rgba(52,211,153,.12)', stroke:'rgba(52,211,153,.55)', 'stroke-dasharray':'4 4'});
+  txt(SX + (hz[0] + hz[1]) / 2 * AU, 58, 'HABITABLE ZONE', {class:'lbl', 'text-anchor':'middle', style:'fill:#34d399;font-weight:700'});
+  txt(SX + (hz[0] + hz[1]) / 2 * AU, 76, '(scientists\' estimates vary)', {class:'lblS', 'text-anchor':'middle'});
+  txt(SX + 0.45 * AU, 58, 'TOO HOT', {class:'lbl', 'text-anchor':'middle', style:'fill:#f87171;font-weight:700'});
+  txt(SX + 2.05 * AU, 58, 'TOO COLD', {class:'lbl', 'text-anchor':'middle', style:'fill:#7dd3fc;font-weight:700'});
+  sun(SX, CY, 34);
+  const P = [['Mercury',0.387,'#a8a29e','too hot'],['Venus',0.723,'#fcd34d','too hot'],['Earth',1,'#38bdf8','liquid water'],['Mars',1.524,'#f87171','frozen or underground']];
+  P.forEach(p => {
+    const x = SX + p[1] * AU, sunlight = 1 / (p[1] * p[1]);
+    el('circle', {cx:x, cy:CY, r:7, fill:p[2]});
+    txt(x, CY - 18, p[0], {class:'lbl halo', 'text-anchor':'middle', style:'font-weight:650'});
+    txt(x, CY + 30, p[3], {class:'lblS halo', 'text-anchor':'middle'});
+    const h = 18 * sunlight;
+    el('rect', {x:x - 13, y:462 - h, width:26, height:h, rx:3, fill:'#fbbf24', opacity:.85});
+    txt(x, 456 - h, sunlight.toFixed(1) + '\u00d7', {class:'lblS', 'text-anchor':'middle'});
+  });
+  el('line', {x1:20, y1:462, x2:780, y2:462, class:'axisl'});
+  txt(20, 486, 'Sunlight each planet gets (Earth = 1)', {class:'lblS'});
+  animate(t => { rs.forEach((c, i) => { const r = ((t * 140) + i * 175) % 700; set(c, {r, opacity:(0.45 * (1 - r / 700)).toFixed(3)}); }); });
+  setPanel(`<p>The <b>habitable zone</b> is the range of distances from a star where a planet could have liquid water on its surface. Too close, and water boils away. Too far, and it freezes.</p>
+  <p>Earth sits inside the Sun's habitable zone. Many scientists' estimates put Mars near the outer edge, yet Mars's water is frozen or locked underground.</p>
+  ${Q(14, 'Why does a planet\'s distance from its star affect whether it can have liquid water?', 'The star\'s energy spreads out as it travels, so a planet closer to the star gets more energy and is hotter. A planet farther away gets less energy and is colder. Too much energy boils water away. Too little freezes it.')}
+  ${Q(15, 'Mars is near the outer edge of the habitable zone, but it has no liquid water on its surface. What else besides distance might matter?', 'The atmosphere. Mars has a very thin atmosphere, so it holds in very little heat, and the air pressure is too low for liquid water to last on the surface. Water there freezes or turns into vapor.')}`);
+}});
+
+// 11. Happy Birthday, Neptune
+scenes.push({part:'Part 6', title:'Happy Birthday, Neptune', run(){
+  setPanel(`<p>To find your age on another planet, divide your age in Earth years by that planet's year (in Earth years).</p>
+  <div class="formula">Age on a planet = my age (Earth years) &divide; that planet's year (Earth years)</div>
+  <p><label for="age">My age in Earth years: </label><input type="number" id="age" min="1" max="120" value="16"></p>
+  <button class="act" id="btnLife">Play my life</button>
+  <button class="act" id="btnCheck">Check my math</button>
+  <div id="ageTable"></div>
+  ${Q(16, 'No person alive today has lived through one full Neptune year. Use the pattern from Part 4 to explain why.', 'Neptune is the farthest planet from the Sun, so it has the longest year: 164.8 Earth years. Nobody alive today is that old, so no one has lived through a full Neptune year.')}`);
+  const ageIn = $('age');
+  const getAge = () => Math.max(0, Math.min(120, parseFloat(ageIn.value) || 0));
+  function life(){
+    stopAll(); clear();
+    const age = getAge(), cx = 400, cy = 255, rM = 55, rN = 200;
+    el('circle', {cx, cy, r:rM, fill:'none', stroke:'#22304d', 'stroke-width':1.2});
+    el('circle', {cx, cy, r:rN, fill:'none', stroke:'#22304d', 'stroke-width':1.2});
+    const arc = el('path', {fill:'none', stroke:'#60a5fa', 'stroke-width':5, 'stroke-linecap':'round', opacity:.8});
+    sun(cx, cy, 16);
+    const merc = el('circle', {r:4, fill:'#a8a29e'}), nep = el('circle', {r:8, fill:'#60a5fa'});
+    const mT = txt(0, 0, 'Mercury', {class:'lblS halo'}), nT = txt(0, 0, 'Neptune', {class:'lblS halo'});
+    const box = el('g');
+    el('rect', {x:14, y:14, width:250, height:84, rx:6, fill:'#0b1220', stroke:'#22304d'}, box);
+    const l1 = txt(26, 38, '', {class:'lbl', style:'font-weight:650'}, box), l2 = txt(26, 60, '', {class:'lblS'}, box), l3 = txt(26, 82, '', {class:'lblS'}, box);
+    txt(400, 488, 'Orbits are not drawn to scale.', {class:'lblS', 'text-anchor':'middle'});
+    const start = Math.PI / 2;
+    animate(t => {
+      const yrs = age * clamp(t / 8);
+      const aM = start + TAU * yrs / 0.24, aN = start + TAU * yrs / 164.8;
+      const mx = cx + rM * Math.cos(aM), my = cy - rM * Math.sin(aM), nx = cx + rN * Math.cos(aN), ny = cy - rN * Math.sin(aN);
+      set(merc, {cx:mx, cy:my}); set(mT, {x:mx + 7, y:my - 7});
+      set(nep, {cx:nx, cy:ny}); set(nT, {x:nx + 12, y:ny - 10});
+      const fr = yrs / 164.8;
+      arc.setAttribute('d', fr > 0 ? `M ${cx} ${cy - rN} A ${rN} ${rN} 0 ${fr > 0.5 ? 1 : 0} 0 ${nx.toFixed(2)} ${ny.toFixed(2)}` : '');
+      l1.textContent = `Years of your life: ${yrs.toFixed(1)}`;
+      l2.textContent = `Mercury trips around the Sun: ${Math.floor(yrs / 0.24)}`;
+      l3.textContent = `Neptune: ${(fr * 100).toFixed(1)}% of one trip`;
+      if (t > 8) return false;
+    });
+  }
+  $('btnLife').onclick = life;
+  $('btnCheck').onclick = () => {
+    const a = getAge();
+    $('ageTable').innerHTML = `<table><tr><th>Planet</th><th>My age there</th></tr>
+      <tr><td>Mercury (0.24 years)</td><td>${a} &divide; 0.24 = ${(a / 0.24).toFixed(1)}</td></tr>
+      <tr><td>Mars (1.9 years)</td><td>${a} &divide; 1.9 = ${(a / 1.9).toFixed(1)}</td></tr>
+      <tr><td>Neptune (164.8 years)</td><td>${a} &divide; 164.8 = ${(a / 164.8).toFixed(3)}</td></tr></table>`;
+  };
+  ageIn.onchange = () => { $('ageTable').innerHTML = ''; };
+  life();
+}});
+
+/* ===== Navigation ===== */
+let idx = 0;
+const prog = $('progress');
+scenes.forEach((s, i) => { const d = document.createElement('span'); d.title = s.part + ': ' + s.title; d.onclick = () => go(i); prog.appendChild(d); });
+function go(i){
+  stopAll();
+  if (paused) togglePause();
+  idx = Math.max(0, Math.min(scenes.length - 1, i));
+  const sc = scenes[idx];
+  $('part').textContent = sc.part; $('title').textContent = sc.title;
+  clear(); sc.run();
+  [...prog.children].forEach((d, k) => d.classList.toggle('on', k <= idx));
+  $('prev').disabled = idx === 0; $('next').disabled = idx === scenes.length - 1;
+}
+function togglePause(){
+  if (!paused){ paused = true; pauseAt = performance.now(); }
+  else { pausedTotal += performance.now() - pauseAt; paused = false; }
+  $('pause').textContent = paused ? 'Play' : 'Pause';
+}
+$('prev').onclick = () => go(idx - 1);
+$('next').onclick = () => go(idx + 1);
+$('replay').onclick = () => go(idx);
+$('pause').onclick = togglePause;
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') go(idx + 1);
+  if (e.key === 'ArrowLeft') go(idx - 1);
+});
+go(0);
+</script>
+</body>
+</html>

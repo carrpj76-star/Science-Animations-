@@ -7,4 +7,5 @@ Mr. Carr's science animations for Earth & Space Science and Environmental Scienc
 | The Carbon Cycle | Earth & Space Science | `carbon-cycle/` |
 | Unearthing Mars: Orbit Lab | Earth & Space Science | `unearthing-mars/` |
 | A Walk Through the Solar System | Earth & Space Science | `solar-system-walk/` |
+| The Fastest Thing Ever Built (Unit 3, Kepler's laws) | Earth & Space Science | `fastest-thing-ever-built/` |
 | Oil Spill Clean Up Simulation | Environmental Science | `oil-spill-cleanup/` |
