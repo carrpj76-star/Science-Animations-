@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Fracking Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ground:#14181C; --main:#E07A2E; --second:#EDEFF2; --accent:#4FB3D9;
+    --display:'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+    --sans:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --panel:#22262A; --edge:#3B3F42; --muted:#8B8E92;
+  }
+  html, body { margin:0; height:100%; background:var(--ground); color:var(--second); font-family:var(--sans) }
+  .app { --w:min(calc(100vw - 400px), calc((100vh - 100px) * 16 / 9)); min-height:100%; box-sizing:border-box; padding:14px; display:grid; grid-template-columns:var(--w) 340px; justify-content:center; align-content:center; align-items:start; gap:18px }
+  .col { display:flex; flex-direction:column; gap:14px; min-width:0 }
+  .frame { width:100%; position:relative; aspect-ratio:16 / 9; overflow:hidden; border-radius:8px; outline:1px solid var(--edge) }
+  #stage { position:absolute; left:0; top:0; width:1920px; height:1080px; transform-origin:0 0; overflow:hidden; background:var(--ground); color:var(--second); font-family:var(--sans) }
+  .layer { position:absolute; inset:0; visibility:hidden }
+  .layer.on { visibility:visible }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
+
+  /* ---- stage art ---- */
+  .words { position:absolute; margin:0; display:flex; flex-direction:column; gap:20px }
+  .words > * { margin:0 }
+  .line { font-family:var(--display); font-size:84px; line-height:1.02; font-weight:700; letter-spacing:.01em }
+  .tag { font-family:var(--display); font-size:30px; font-weight:500; letter-spacing:.08em; text-transform:uppercase }
+  .head { left:900px; top:46px; width:960px; gap:6px }
+  .kicker { font-family:var(--display); font-size:30px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--main) }
+  .art { position:absolute; inset:0; width:100%; height:100%; overflow:visible }
+  .xs { position:absolute; inset:0 }
+  .xs-band { position:absolute; left:0; width:1920px; border-top:2px solid #3B3F42 }
+  .xs-soil { background:#453020; border-top-color:#8E5327 }
+  .xs-water { background:#213A46 }
+  .xs-rock1 { background-color:#303438; background-image:radial-gradient(#484C4F 2px, transparent 2.5px); background-size:26px 22px }
+  .xs-rock2 { background:#282B2F }
+  .xs-shale { background-color:#3D4145; background-image:repeating-linear-gradient(0deg, rgba(20,24,28,.55) 0 2px, transparent 2px 15px) }
+  .xs-base { background:#1F2327 }
+  .xs-label { left:44px; gap:2px }
+  .xs-label .tag { font-size:28px; color:#C6C8CC }
+  .steel { fill:none; stroke:var(--second); stroke-width:9; stroke-linecap:round; stroke-linejoin:round }
+  .cement { fill:none; stroke:#5E6165; stroke-width:28; stroke-linejoin:round }
+  .rig { fill:none; stroke:var(--second); stroke-width:5; stroke-linejoin:round; stroke-linecap:round }
+  .solid { fill:#55595C; stroke:var(--second); stroke-width:3; stroke-linejoin:round }
+  .gas { fill:var(--main); transform-box:fill-box; transform-origin:center }
+  .crack { fill:none; stroke:var(--accent); stroke-width:5; stroke-linecap:round; stroke-linejoin:round }
+  .perf { fill:none; stroke:var(--second); stroke-width:4; stroke-linecap:round; transform-box:fill-box; transform-origin:center }
+  .flow { fill:none; stroke-width:5; stroke-linecap:round; stroke-dasharray:16 26 }
+  .callout { position:absolute; margin:0; padding:16px 22px; font-size:30px; line-height:1.3; background:#32363A; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.25) }
+  .recap-veil { position:absolute; inset:0; background:var(--ground) }
+  .recap-title { font-size:124px }
+  .recap-bar { width:380px; height:8px; background:var(--main); transform-origin:0 50%; margin-top:-4px }
+  .recap-list { display:flex; flex-direction:column; gap:22px; margin-top:22px }
+  .recap-row { display:flex; align-items:baseline; gap:30px; margin:0; font-size:44px; line-height:1.2 }
+  .recap-n { font-family:var(--display); font-weight:700; font-size:60px; width:44px; color:var(--muted) }
+
+  /* ---- controls ---- */
+  .controls { display:grid; grid-template-columns:auto 1fr auto auto; align-items:end; gap:12px }
+  .btn { font:600 17px/1 var(--sans); padding:12px 18px; border-radius:6px; border:1px solid var(--edge); background:var(--panel); color:var(--second); cursor:pointer; white-space:nowrap }
+  .btn:hover:not(:disabled) { border-color:var(--muted) }
+  .btn.primary { background:var(--main); border-color:var(--main); color:var(--ground) }
+  .btn.primary:hover { filter:brightness(1.08) }
+  .btn:disabled { opacity:.38; cursor:default }
+  .btn:focus-visible, .step:focus-visible { outline:3px solid var(--accent); outline-offset:2px }
+  .steps { display:flex; gap:6px; min-width:0 }
+  .step { flex:1; min-width:0; background:none; border:0; border-top:4px solid var(--edge); padding:9px 2px 2px; color:var(--muted); font:500 18px/1.1 var(--display); letter-spacing:.02em; text-align:left; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .step.done { border-top-color:#8E5327; color:#C6C8CC }
+  .step.on { border-top-color:var(--main); color:var(--second) }
+  .check { box-sizing:border-box; min-height:156px; width:100%; padding:16px 18px; background:var(--panel); border:1px solid var(--edge); border-radius:8px }
+  .check h3 { margin:0 0 12px; font:600 20px/1.3 var(--sans) }
+  .check .note { margin:0; color:#C6C8CC; font-size:17px; line-height:1.4 }
+  .opts { display:grid; grid-template-columns:1fr; gap:8px }
+  .opt { text-align:left; font:400 17px/1.3 var(--sans); padding:10px 14px; border-radius:6px; border:1px solid var(--edge); background:var(--ground); color:var(--second); cursor:pointer }
+  .opt:hover:not(:disabled) { border-color:var(--muted) }
+  .opt:focus-visible { outline:3px solid var(--accent); outline-offset:2px }
+  .opt:disabled { cursor:default }
+  .opt.right { border-color:var(--accent); background:#213A46 }
+  .opt.wrong { border-color:#8E5327; color:var(--muted); text-decoration:line-through }
+  .fb { margin:10px 0 0; font-size:17px; line-height:1.4; min-height:1.4em }
+  .fb b { font-weight:700 }
+  .step:disabled { cursor:default; opacity:.45 }
+  @media (max-width:900px) {
+    .app { --w:min(calc(100vw - 28px), calc((100vh - 120px) * 16 / 9)); grid-template-columns:var(--w); align-content:start }
+    .opts { grid-template-columns:repeat(2, minmax(0, 1fr)) }
+  }
+  @media (max-width:700px) {
+    .opts { grid-template-columns:1fr }
+    .controls { grid-template-columns:auto 1fr auto; }
+    .steps { grid-column:1 / -1; grid-row:1 }
+    #replay { display:none }
+    .step { font-size:15px }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="col">
+  <div class="frame" id="frame">
+    <div id="stage" aria-hidden="true"></div>
+  </div>
+  <nav class="controls" aria-label="Animation steps">
+    <button class="btn" id="back" type="button">Back</button>
+    <div class="steps" id="steps"></div>
+    <button class="btn" id="replay" type="button">Replay step</button>
+    <button class="btn primary" id="next" type="button">Next step</button>
+  </nav>
+  </div>
+  <section class="check" id="check" aria-live="polite" aria-label="Check yourself"></section>
+  <p class="sr" id="live" aria-live="polite"></p>
+</main>
+
+<script>
+(function () {
+  /* ---------- helpers ---------- */
+  const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+  const seg = (t, a, b) => clamp01((t - a) / (b - a));
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const eo = x => 1 - Math.pow(1 - x, 3);
+  const ei = x => x * x * x;
+  const eio = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const eob = (x, s) => { s = s || 1.4; if (x <= 0) return 0; if (x >= 1) return 1; const c = s + 1; return 1 + c * Math.pow(x - 1, 3) + s * Math.pow(x - 1, 2); };
+  const h = html => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
+  function fadeIn(el, t, t0) {
+    if (!el._w) {
+      const words = el.textContent.split(' ');
+      el.textContent = '';
+      el._w = words.map((w, i) => {
+        const s = document.createElement('span');
+        s.textContent = w + (i < words.length - 1 ? ' ' : '');
+        s.style.display = 'inline-block'; s.style.whiteSpace = 'pre';
+        el.appendChild(s); return s;
+      });
+    }
+    el._w.forEach((s, i) => {
+      const p = eo(seg(t, t0 + i * 0.11, t0 + i * 0.11 + 0.5));
+      s.style.opacity = p; s.style.transform = 'translateX(' + (26 * (1 - p)).toFixed(1) + 'px)';
+    });
+  }
+  function rnd(seed) { let s = seed >>> 0; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  /* ---------- the shared cross-section ---------- */
+  const WELL = 'M620 250 V760 Q620 845 705 845 H1760';
+  const TOTAL = 1703;
+  const STAGES = [1630, 1480, 1330, 1180, 1030, 880];
+  const GAS = []; { const r = rnd(11); for (let i = 0; i < 84; i++) GAS.push({ x: 250 + r() * 1640, y: 786 + r() * 118, r: 3 + r() * 3.5, ph: r() * 6.283 }); }
+  const CRACKS = (() => {
+    const rc = rnd(5);
+    return STAGES.map(x => {
+      const arms = [];
+      [-1, 1].forEach(dir => {
+        let px = x, py = 845, d = 'M' + px + ' ' + py; const pts = [];
+        for (let k = 0; k < 5; k++) { px += (rc() - 0.5) * 40; py += dir * (11 + rc() * 4); d += ' L' + px.toFixed(1) + ' ' + py.toFixed(1); pts.push([px, py]); }
+        arms.push(d);
+        let bx = pts[1][0], by = pts[1][1]; const s = rc() < 0.5 ? -1 : 1; let db = 'M' + bx.toFixed(1) + ' ' + by.toFixed(1);
+        for (let k = 0; k < 3; k++) { bx += s * (18 + rc() * 12); by += dir * (7 + rc() * 5); db += ' L' + bx.toFixed(1) + ' ' + by.toFixed(1); }
+        arms.push(db);
+      });
+      return arms;
+    });
+  })();
+  const SAND = (() => {
+    const r = rnd(23), out = [];
+    STAGES.forEach((sx, i) => { for (let k = 0; k < 12; k++) { const dir = k % 2 ? 1 : -1, dy = 12 + r() * 52; out.push({ i: i, k: k, x: sx + (r() - 0.5) * 40 * (dy / 60), y: 845 + dir * dy }); } });
+    return out;
+  })();
+  const GAS_MOVES = GAS.map(g => {
+    let best = STAGES[0];
+    STAGES.forEach(sx => { if (Math.abs(g.x - sx) < Math.abs(g.x - best)) best = sx; });
+    const d = Math.abs(g.x - best);
+    return g.x > 740 && d < 140 ? { tx: best - g.x, ty: 845 - g.y, a: 1.2 + (d / 140) * 1.5 } : null;
+  });
+  const RIG = '<g class="xs-rig"><rect class="solid" x="530" y="238" width="180" height="14" rx="2"/>' +
+    '<path class="rig" d="M578 238 L612 92 M662 238 L628 92 M590 186 H650 M601 140 H639 M584 212 L645 166 M656 212 L595 166"/>' +
+    '<rect class="solid" x="604" y="80" width="32" height="16" rx="3"/></g>';
+  const TRUCKS = [720, 880, 1040].map(x0 => '<g><rect class="solid" x="' + x0 + '" y="196" width="104" height="42" rx="3"/>' +
+    '<rect class="solid" x="' + (x0 + 106) + '" y="208" width="30" height="30" rx="4"/>' +
+    '<circle class="solid" cx="' + (x0 + 22) + '" cy="243" r="8"/><circle class="solid" cx="' + (x0 + 80) + '" cy="243" r="8"/><circle class="solid" cx="' + (x0 + 120) + '" cy="243" r="8"/></g>').join('');
+
+  function buildXS() {
+    const B = [['soil', 250, 50], ['water', 300, 130], ['rock1', 430, 170], ['rock2', 600, 170], ['shale', 770, 150], ['base', 920, 160]];
+    const L = [['Groundwater', 344], ['Rock layers', 584], ['Shale', 826]];
+    let s = '<div class="xs">';
+    B.forEach(b => { s += '<div class="xs-band xs-' + b[0] + '" style="top:' + b[1] + 'px;height:' + b[2] + 'px"></div>'; });
+    L.forEach(l => { s += '<div class="words xs-label" style="top:' + l[1] + 'px"><p class="tag">' + l[0] + '</p></div>'; });
+    s += '<svg class="art" viewBox="0 0 1920 1080"><g>';
+    GAS.forEach(g => { s += '<circle class="gas" cx="' + g.x.toFixed(1) + '" cy="' + g.y.toFixed(1) + '" r="' + g.r.toFixed(1) + '"/>'; });
+    s += '</g><g>';
+    CRACKS.forEach(arms => arms.forEach(d => { s += '<path class="crack xs-crack" pathLength="1" d="' + d + '"/>'; }));
+    s += '</g><path class="cement xs-cement" pathLength="1" d="' + WELL + '"/><path class="steel xs-well" pathLength="1" d="' + WELL + '"/><g>';
+    STAGES.forEach(x => { s += '<path class="perf xs-perf" d="M' + (x - 14) + ' 831 V806 M' + (x + 14) + ' 859 V884"/>'; });
+    s += '</g><path class="flow xs-down" style="stroke:var(--accent);opacity:0" d="' + WELL + '"/>' +
+      '<path class="flow xs-up" style="stroke:var(--main);opacity:0" d="' + WELL + '"/>' + RIG + '</svg></div>';
+    const el = h(s), q = sel => Array.from(el.querySelectorAll(sel));
+    return { el: el, bands: q('.xs-band'), labels: q('.xs-label'), gas: q('.gas'), cracks: q('.xs-crack'), perfs: q('.xs-perf'),
+      cement: el.querySelector('.xs-cement'), well: el.querySelector('.xs-well'), down: el.querySelector('.xs-down'), up: el.querySelector('.xs-up'), rig: el.querySelector('.xs-rig') };
+  }
+  function pt(s) {
+    s = Math.max(0, Math.min(TOTAL, s));
+    if (s <= 510) return [620, 250 + s];
+    if (s <= 648) { const u = (s - 510) / 138, a = 1 - u; return [a * a * 620 + 2 * a * u * 620 + u * u * 705, a * a * 760 + 2 * a * u * 845 + u * u * 845]; }
+    return [705 + (s - 648), 845];
+  }
+  function draw(el, p) { el.style.strokeDasharray = '1 1'; el.style.strokeDashoffset = String(1 - p); el.style.opacity = p > 0.002 ? '1' : '0'; }
+  function shimmer(x, ft) { x.gas.forEach((c, i) => { c.style.opacity = String(0.72 + 0.28 * Math.sin(ft * 1.9 + GAS[i].ph)); }); }
+  function sandSvg(cls) { return SAND.map(d => '<circle class="' + cls + '" cx="' + d.x.toFixed(1) + '" cy="' + d.y.toFixed(1) + '" r="3.2" style="fill:var(--second)"/>').join(''); }
+  function head(kicker, title) { return '<div class="words head"><p class="kicker">' + kicker + '</p><h2 class="line">' + title + '</h2></div>'; }
+  function callout(cls, style, text) { return '<p class="callout ' + cls + '" style="' + style + '">' + text + '</p>'; }
+  const BOTTOM = 'left:880px;top:948px;width:940px';
+
+  /* ---------- the steps ---------- */
+  const SCENES = [
+    { name: 'Start', dur: 3.0,
+      say: 'How fracking works. Natural gas is trapped in tiny pores in shale rock, often 1 to 3 kilometers underground.',
+      init(L) {
+        this.x = buildXS(); L.append(this.x.el);
+        L.append(h('<div class="words head"><p class="kicker">Hydraulic fracturing</p><h1 class="line">How fracking works</h1></div>'));
+        L.append(h(callout('c', 'left:1140px;top:612px;width:660px', 'Natural gas is trapped in tiny pores in shale rock, often 1 to 3 km underground.')));
+        this.kick = L.querySelector('.kicker'); this.line = L.querySelector('.line'); this.call = L.querySelector('.callout').style;
+        draw(this.x.well, 0); draw(this.x.cement, 0);
+        this.x.cracks.forEach(c => draw(c, 0)); this.x.perfs.forEach(p => { p.style.opacity = '0'; }); this.x.rig.style.opacity = '0';
+      },
+      render(t, ft) {
+        const x = this.x;
+        fadeIn(this.kick, t, 0); fadeIn(this.line, t, 0.15);
+        x.bands.forEach((b, i) => { b.style.transform = 'translateY(' + lerp(10, 0, eo(seg(t, 0.1 + i * 0.06, 0.6 + i * 0.06))) + 'px)'; });
+        x.labels.forEach((l, i) => { const p = eo(seg(t, 0.4 + i * 0.25, 0.9 + i * 0.25)); l.style.opacity = p; l.style.transform = 'translateX(' + lerp(26, 0, p) + 'px)'; });
+        shimmer(x, ft);
+        x.gas.forEach((c, i) => {
+          const a = 1.0 + (GAS[i].x / 1920) * 0.9, p = seg(t, a, a + 0.4);
+          c.style.opacity = String(Number(c.style.opacity) * Math.min(1, p * 2));
+          c.style.transform = 'scale(' + (p <= 0 ? 0 : eob(p, 1.8)) + ')';
+        });
+        const cp = eo(seg(t, 2.1, 2.6)); this.call.opacity = cp; this.call.transform = 'translateY(' + lerp(18, 0, cp) + 'px)';
+      } },
+
+    { name: 'Drill', dur: 4.4,
+      q: { text: 'Why is the well lined with steel pipe and cement where it passes the groundwater?',
+        opts: ['To make the drill bit spin faster', 'To keep gas and fluids from leaking into the groundwater', 'To heat up the shale rock', 'To store the natural gas underground'], a: 1,
+        why: 'The steel casing and cement seal the well off so it doesn\u2019t leak into drinking water.',
+        hint: 'Look at what the casing passes through near the top of the well.' },
+      say: 'Step 1: Drill down, then sideways. Steel pipe and cement seal the well off from the groundwater.',
+      init(L) {
+        this.x = buildXS(); L.append(this.x.el);
+        L.append(h('<svg class="art" viewBox="0 0 1920 1080"><g class="bit"><circle class="solid" r="14"/><path class="rig tooth" d="M-9 0 H9 M0 -9 V9"/></g></svg>'));
+        L.append(h(head('Step 1', 'Drill down, then sideways')));
+        L.append(h(callout('c', 'left:690px;top:322px;width:600px', 'Steel pipe and cement seal the well off from the groundwater.')));
+        this.kick = L.querySelector('.kicker'); this.line = L.querySelector('.line'); this.call = L.querySelector('.callout').style;
+        this.bit = L.querySelector('.bit'); this.tooth = L.querySelector('.tooth');
+        this.x.cracks.forEach(c => draw(c, 0)); this.x.perfs.forEach(p => { p.style.opacity = '0'; });
+      },
+      render(t, ft) {
+        const x = this.x;
+        fadeIn(this.kick, t, 0.1); fadeIn(this.line, t, 0.25);
+        shimmer(x, ft);
+        const rp = seg(t, 0.1, 0.7);
+        x.rig.style.opacity = String(eo(rp)); x.rig.style.transform = 'translateY(' + lerp(40, 0, eob(rp, 1.6)) + 'px)';
+        const p = eio(seg(t, 0.75, 3.9));
+        draw(x.well, p); draw(x.cement, eio(seg(t, 1.0, 4.2)));
+        const pos = pt(p * TOTAL), wob = Math.sin(t * 40) * (p > 0 && p < 1 ? 1.5 : 0);
+        this.bit.setAttribute('transform', 'translate(' + (pos[0] + wob).toFixed(1) + ' ' + pos[1].toFixed(1) + ')');
+        this.bit.style.opacity = eo(seg(t, 0.6, 0.8)) * (1 - ei(seg(t, 3.9, 4.3)));
+        this.tooth.setAttribute('transform', 'rotate(' + ((t * 540) % 360).toFixed(1) + ')');
+        const cp = eo(seg(t, 1.7, 2.2)); this.call.opacity = cp; this.call.transform = 'translateY(' + lerp(18, 0, cp) + 'px)';
+      } },
+
+    { name: 'Perforate', dur: 3.9,
+      q: { text: 'What do the small charges do in this step?',
+        opts: ['Seal off the bottom of the well', 'Push the natural gas deeper underground', 'Blast holes through the pipe and cement into the shale', 'Melt the shale so gas can escape'], a: 2,
+        why: 'The holes connect the inside of the pipe to the shale, so fluid can get out and gas can get in.',
+        hint: 'Watch what\u2019s left behind in the pipe after each blast.' },
+      say: 'Step 2: Punch holes in the pipe. Small charges blast holes through the steel and cement, out into the shale.',
+      init(L) {
+        this.x = buildXS(); L.append(this.x.el);
+        let rays = ''; for (let k = 0; k < 8; k++) rays += '<path d="M0 -18 V-34" transform="rotate(' + (k * 45 + 22.5) + ')"/>';
+        L.append(h('<svg class="art" viewBox="0 0 1920 1080">' + STAGES.map(() => '<g class="rig burst">' + rays + '</g>').join('') +
+          '<g class="gun"><rect class="solid" x="-34" y="-9" width="68" height="18" rx="4"/></g></svg>'));
+        L.append(h(head('Step 2', 'Punch holes in the pipe')));
+        L.append(h(callout('c', BOTTOM, 'Small charges blast holes through the steel and cement, out into the shale.')));
+        this.kick = L.querySelector('.kicker'); this.line = L.querySelector('.line'); this.call = L.querySelector('.callout').style;
+        this.gun = L.querySelector('.gun'); this.bursts = Array.from(L.querySelectorAll('.burst'));
+        draw(this.x.well, 1); draw(this.x.cement, 1); this.x.cracks.forEach(c => draw(c, 0));
+      },
+      gunX(t) {
+        const T0 = 1.1, G = 0.45;
+        if (t < T0) return lerp(760, STAGES[0], eio(seg(t, 0.3, 1.0)));
+        for (let i = 0; i < STAGES.length - 1; i++) { const ti = T0 + i * G; if (t < ti + G) return lerp(STAGES[i], STAGES[i + 1], eio(seg(t, ti + 0.15, ti + G))); }
+        return lerp(STAGES[STAGES.length - 1], 760, eio(seg(t, T0 + 5 * G + 0.2, T0 + 5 * G + 0.6)));
+      },
+      render(t, ft) {
+        const x = this.x;
+        fadeIn(this.kick, t, 0.1); fadeIn(this.line, t, 0.25);
+        shimmer(x, ft);
+        this.gun.setAttribute('transform', 'translate(' + this.gunX(t).toFixed(1) + ' 845)');
+        this.gun.style.opacity = eo(seg(t, 0.25, 0.5)) * (1 - ei(seg(t, 3.5, 3.85)));
+        STAGES.forEach((sx, i) => {
+          const ti = 1.1 + i * 0.45, b = seg(t, ti, ti + 0.38), g = this.bursts[i];
+          g.setAttribute('transform', 'translate(' + sx + ' 845) scale(' + lerp(0.6, 1.5, eo(b)).toFixed(3) + ')');
+          g.style.opacity = b > 0 && b < 1 ? (1 - b) : 0;
+          const pp = eo(seg(t, ti + 0.02, ti + 0.25)); x.perfs[i].style.opacity = pp; x.perfs[i].style.transform = 'scaleY(' + pp + ')';
+        });
+        const cp = eo(seg(t, 0.7, 1.2)); this.call.opacity = cp; this.call.transform = 'translateY(' + lerp(18, 0, cp) + 'px)';
+      } },
+
+    { name: 'Fracture', dur: 5.4,
+      q: { text: 'What makes up most of the fracking fluid?',
+        opts: ['Water', 'Sand', 'Chemicals', 'Oil'], a: 0,
+        why: 'About 90% of the fluid is water. Sand is about 9.5% and chemicals about 0.5%.',
+        hint: 'Check the percentages in the box at the bottom of the diagram.' },
+      say: 'Step 3: Fracture the shale. The fluid is about 90 percent water, 9.5 percent sand and 0.5 percent chemicals, pumped in at very high pressure.',
+      init(L) {
+        this.x = buildXS(); L.append(this.x.el);
+        L.append(h('<svg class="art" viewBox="0 0 1920 1080"><path class="crack hose" pathLength="1" d="M724 226 H628 V236"/><g class="fleet">' + TRUCKS + '</g></svg>'));
+        L.append(h(head('Step 3', 'Fracture the shale')));
+        L.append(h(callout('c', BOTTOM, 'The fluid is about 90% water, 9.5% sand and 0.5% chemicals, pumped in at very high pressure.')));
+        this.kick = L.querySelector('.kicker'); this.line = L.querySelector('.line'); this.call = L.querySelector('.callout').style;
+        this.fleet = L.querySelector('.fleet'); this.trucks = Array.from(this.fleet.children); this.hose = L.querySelector('.hose');
+        draw(this.x.well, 1); draw(this.x.cement, 1);
+      },
+      render(t, ft) {
+        const x = this.x;
+        fadeIn(this.kick, t, 0.1); fadeIn(this.line, t, 0.25);
+        shimmer(x, ft);
+        const fp = seg(t, 0, 0.95);
+        this.fleet.style.opacity = eo(seg(t, 0, 0.35)); this.fleet.style.transform = 'translateX(' + lerp(520, 0, eo(fp)) + 'px)';
+        this.trucks.forEach((g, i) => { g.setAttribute('transform', 'translate(0 ' + (Math.sin(ft * 26 + i * 2) * (fp >= 1 ? 1.2 : 0)).toFixed(2) + ')'); });
+        draw(this.hose, eo(seg(t, 0.85, 1.2)));
+        x.down.style.opacity = eo(seg(t, 1.1, 1.5)); x.down.style.strokeDashoffset = String(-ft * 260);
+        STAGES.forEach((sx, i) => { const a = 1.7 + i * 0.55; for (let k = 0; k < 4; k++) draw(x.cracks[i * 4 + k], eo(seg(t, a + (k % 2) * 0.18, a + 0.9))); });
+        const cp = eo(seg(t, 1.0, 1.5)); this.call.opacity = cp; this.call.transform = 'translateY(' + lerp(18, 0, cp) + 'px)';
+      } },
+
+    { name: 'Gas flows', dur: 3.8,
+      q: { text: 'Why is sand pumped into the cracks along with the water?',
+        opts: ['It cleans the inside of the pipe', 'It filters out the chemicals', 'It makes the water heavy enough to sink', 'It props the cracks open so gas can flow out'], a: 3,
+        why: 'Once the pumping pressure is released, the sand grains keep the cracks from closing back up.',
+        hint: 'Think about what would happen to the cracks once the pumps stop pushing.' },
+      say: 'Step 4: Gas flows up the well. Sand props the cracks open. Gas, plus some used water, flows back up the well and on to a pipeline.',
+      init(L) {
+        this.x = buildXS(); L.append(this.x.el);
+        L.append(h('<svg class="art" viewBox="0 0 1920 1080">' + sandSvg('sand') +
+          '<path class="flow back" style="stroke:var(--accent)" d="' + WELL + '"/><path class="flow pipe" style="stroke:var(--main)" d="M640 230 H1180"/>' +
+          '<path class="crack hose" pathLength="1" d="M724 226 H628 V236"/><g class="fleet">' + TRUCKS + '</g></svg>'));
+        L.append(h('<div class="words pipetag" style="left:1200px;top:212px"><p class="tag">To pipeline</p></div>'));
+        L.append(h(head('Step 4', 'Gas flows up the well')));
+        L.append(h(callout('c', BOTTOM, 'Sand props the cracks open. Gas, plus some used water, flows back up the well.')));
+        this.kick = L.querySelector('.kicker'); this.line = L.querySelector('.line'); this.call = L.querySelector('.callout').style;
+        this.fleet = L.querySelector('.fleet').style; this.hose = L.querySelector('.hose');
+        this.back = L.querySelector('.back').style; this.pipe = L.querySelector('.pipe').style; this.pipetag = L.querySelector('.pipetag').style;
+        this.sand = Array.from(L.querySelectorAll('.sand'));
+        draw(this.x.well, 1); draw(this.x.cement, 1); this.x.cracks.forEach(c => draw(c, 1));
+      },
+      render(t, ft) {
+        const x = this.x;
+        fadeIn(this.kick, t, 0.1); fadeIn(this.line, t, 0.25);
+        const lp = seg(t, 0.25, 1.15);
+        this.fleet.transform = 'translateX(' + lerp(0, 620, ei(lp)) + 'px)'; this.fleet.opacity = 1 - ei(seg(t, 0.75, 1.15));
+        draw(this.hose, 1 - ei(seg(t, 0.05, 0.45)));
+        x.down.style.opacity = 1 - ei(seg(t, 0.2, 0.7)); x.down.style.strokeDashoffset = String(-ft * 260);
+        this.sand.forEach((c, j) => { const d = SAND[j]; c.style.opacity = eo(seg(t, 0.4 + d.i * 0.12 + d.k * 0.02, 0.8 + d.i * 0.12 + d.k * 0.02)); });
+        shimmer(x, ft);
+        x.gas.forEach((c, i) => {
+          const m = GAS_MOVES[i]; if (!m) return;
+          const p = eio(seg(t, m.a, m.a + 0.9));
+          c.style.transform = 'translate(' + (m.tx * p).toFixed(1) + 'px,' + (m.ty * p).toFixed(1) + 'px) scale(' + lerp(1, 0.6, p).toFixed(3) + ')';
+          c.style.opacity = String(Number(c.style.opacity) * (1 - seg(t, m.a + 0.7, m.a + 0.95)));
+        });
+        x.up.style.opacity = eo(seg(t, 1.7, 2.2)); x.up.style.strokeDashoffset = String(ft * 260);
+        this.back.opacity = 0.75 * eo(seg(t, 2.0, 2.5)); this.back.strokeDashoffset = String(ft * 260 + 21);
+        this.pipe.opacity = eo(seg(t, 2.6, 3.0)); this.pipe.strokeDashoffset = String(-ft * 200);
+        const tp = eo(seg(t, 2.9, 3.4)); this.pipetag.opacity = tp; this.pipetag.transform = 'translateX(' + lerp(24, 0, tp) + 'px)';
+        const cp = eo(seg(t, 0.8, 1.3)); this.call.opacity = cp; this.call.transform = 'translateY(' + lerp(18, 0, cp) + 'px)';
+      } },
+
+    { name: 'Recap', dur: 2.2,
+      say: 'Recap. 1, drill down, then sideways into the shale. 2, blast small holes through the pipe. 3, pump in water, sand and chemicals to crack the rock. 4, sand holds the cracks open, and gas flows up.',
+      init(L) {
+        this.x = buildXS(); L.append(this.x.el);
+        L.append(h('<svg class="art" viewBox="0 0 1920 1080">' + sandSvg('') +
+          '<path class="flow back" style="stroke:var(--accent)" d="' + WELL + '"/><path class="flow pipe" style="stroke:var(--main)" d="M640 230 H1180"/></svg>'));
+        L.append(h('<div class="recap-veil"></div>'));
+        const steps = ['Drill down, then sideways into the shale', 'Blast small holes through the pipe', 'Pump in water, sand and chemicals to crack the rock', 'Sand holds the cracks open, and gas flows up'];
+        L.append(h('<div class="words" style="left:200px;top:170px;width:1520px;gap:14px"><p class="kicker">Recap</p><h2 class="line recap-title">How fracking works</h2><div class="recap-bar"></div><div class="recap-list">' +
+          steps.map((s, i) => '<p class="recap-row"><span class="recap-n">' + (i + 1) + '</span><span>' + s + '</span></p>').join('') + '</div></div>'));
+        this.veil = L.querySelector('.recap-veil').style; this.kick = L.querySelector('.kicker'); this.title = L.querySelector('.recap-title');
+        this.bar = L.querySelector('.recap-bar').style; this.rows = Array.from(L.querySelectorAll('.recap-row'));
+        this.back = L.querySelector('.back').style; this.pipe = L.querySelector('.pipe').style;
+        draw(this.x.well, 1); draw(this.x.cement, 1); this.x.cracks.forEach(c => draw(c, 1));
+      },
+      render(t, ft) {
+        const x = this.x;
+        shimmer(x, ft); x.gas.forEach((c, i) => { if (GAS_MOVES[i]) c.style.opacity = '0'; });
+        x.up.style.opacity = 1; x.up.style.strokeDashoffset = String(ft * 260);
+        this.back.opacity = 0.75; this.back.strokeDashoffset = String(ft * 260 + 21); this.pipe.strokeDashoffset = String(-ft * 200);
+        this.veil.opacity = 0.87 * eo(seg(t, 0, 0.5));
+        fadeIn(this.kick, t, 0.15); fadeIn(this.title, t, 0.25);
+        this.bar.transform = 'scaleX(' + eo(seg(t, 0.6, 1.05)) + ')';
+        this.rows.forEach((row, i) => { const p = eo(seg(t, 0.75 + i * 0.22, 1.3 + i * 0.22)); row.style.opacity = p; row.style.transform = 'translateX(' + lerp(30, 0, p) + 'px)'; });
+      } }
+  ];
+
+  /* ---------- player ---------- */
+  const stage = document.getElementById('stage'), frame = document.getElementById('frame');
+  const stepsNav = document.getElementById('steps'), live = document.getElementById('live');
+  const backBtn = document.getElementById('back'), nextBtn = document.getElementById('next'), replayBtn = document.getElementById('replay');
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const layers = SCENES.map(sc => { const L = h('<div class="layer"></div>'); stage.appendChild(L); sc.init(L); return L; });
+  const pills = SCENES.map((sc, i) => {
+    const b = h('<button class="step" type="button"></button>');
+    b.textContent = sc.name; b.setAttribute('aria-label', 'Go to ' + sc.name);
+    b.addEventListener('click', () => go(i, false)); stepsNav.appendChild(b); return b;
+  });
+
+  const check = document.getElementById('check');
+  const answered = SCENES.map(sc => !sc.q);
+  let cur = 0, startAt = 0, ready = false;
+  const reachable = () => { let f = 0; while (f < SCENES.length - 1 && answered[f]) f++; return f; };
+  function updateNav() {
+    const last = cur === SCENES.length - 1, locked = !answered[cur], far = reachable();
+    backBtn.disabled = cur === 0;
+    nextBtn.disabled = locked;
+    nextBtn.textContent = locked ? 'Answer to continue' : last ? 'Start over' : 'Next step';
+    pills.forEach((p, j) => { p.disabled = j > far; });
+  }
+  function note(text) { check.innerHTML = ''; const p = document.createElement('p'); p.className = 'note'; p.textContent = text; check.appendChild(p); }
+  function showCheck() {
+    const sc = SCENES[cur], q = sc.q;
+    if (!q) { note(cur === 0 ? 'Watch each step, then answer a quick question to unlock the next one.' : 'You checked all four steps. Click Start over to watch it again.'); return; }
+    if (!ready && !answered[cur]) { note('Watch this step. A question will appear when it finishes.'); return; }
+    check.innerHTML = '';
+    const h3 = document.createElement('h3'); h3.textContent = q.text; check.appendChild(h3);
+    const box = document.createElement('div'); box.className = 'opts'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Answer choices');
+    const fb = document.createElement('p'); fb.className = 'fb';
+    const btns = q.opts.map((o, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = o;
+      b.addEventListener('click', () => {
+        if (i === q.a) {
+          answered[cur] = true; b.classList.add('right'); btns.forEach(x => { x.disabled = true; });
+          fb.innerHTML = '<b>Correct.</b> '; fb.appendChild(document.createTextNode(q.why));
+          updateNav(); nextBtn.focus();
+        } else {
+          b.classList.add('wrong'); b.disabled = true;
+          fb.innerHTML = '<b>Not quite.</b> '; fb.appendChild(document.createTextNode(q.hint));
+        }
+      });
+      box.appendChild(b); return b;
+    });
+    if (answered[cur]) { btns.forEach(x => { x.disabled = true; }); btns[q.a].classList.add('right'); fb.innerHTML = '<b>Correct.</b> '; fb.appendChild(document.createTextNode(q.why)); }
+    check.appendChild(box); check.appendChild(fb);
+  }
+  function go(i, atEnd) {
+    cur = Math.max(0, Math.min(SCENES.length - 1, i));
+    const dur = SCENES[cur].dur;
+    startAt = performance.now() - ((atEnd || reduce) ? dur * 1000 : 0);
+    ready = false;
+    layers.forEach((L, j) => L.classList.toggle('on', j === cur));
+    pills.forEach((p, j) => { p.classList.toggle('on', j === cur); p.classList.toggle('done', j < cur); if (j === cur) p.setAttribute('aria-current', 'step'); else p.removeAttribute('aria-current'); });
+    updateNav();
+    showCheck();
+    live.textContent = SCENES[cur].say;
+  }
+  backBtn.addEventListener('click', () => go(cur - 1, true));
+  nextBtn.addEventListener('click', () => go(cur === SCENES.length - 1 ? 0 : cur + 1, false));
+  replayBtn.addEventListener('click', () => go(cur, false));
+  document.addEventListener('keydown', e => {
+    if (e.target && e.target.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); nextBtn.click(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); if (!backBtn.disabled) backBtn.click(); }
+  });
+
+  function fit() { stage.style.transform = 'scale(' + (frame.clientWidth / 1920) + ')'; }
+  window.addEventListener('resize', fit);
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(frame);
+  fit();
+
+  function tick(now) {
+    const sc = SCENES[cur];
+    const t = Math.min(sc.dur, (now - startAt) / 1000);
+    const ft = reduce ? 0 : now / 1000;
+    sc.render(t, ft);
+    if (!ready && t >= sc.dur) { ready = true; if (sc.q && !answered[cur]) showCheck(); }
+    requestAnimationFrame(tick);
+  }
+  go(0, false);
+  const begin = () => requestAnimationFrame(tick);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { go(0, false); begin(); }); else begin();
+})();
+</script>
+</body>
+</html>
